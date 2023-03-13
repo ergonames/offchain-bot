@@ -52,19 +52,13 @@ sealed trait ErgoNamesContracts extends EnumEntry {
   }
 }
 
-object YourProjectContracts extends Enum[ErgoNamesContracts] {
+object ErgoNamesContracts extends Enum[ErgoNamesContracts] {
   val values: immutable.IndexedSeq[ErgoNamesContracts] = findValues
-  case object StateContract extends NFTBoxGuardScriptContract
-  case object IssuerContract extends NFTBoxGuardScriptContract
-  case object CollectionIssuer extends NFTBoxGuardScriptContract
-  case object CollectionIssuance extends NFTBoxGuardScriptContract
-  case object SingletonIssuer extends NFTBoxGuardScriptContract
-  case object SingletonIssuance extends NFTBoxGuardScriptContract
-  case object AVLdebug extends NFTBoxGuardScriptContract
+  case object MintContract extends TokenBoxGuardScriptContract
   case object ProxyContract extends ProxyContractBoxGuardScriptContract
 }
 
-sealed trait NFTContract extends ErgoNamesContracts {
+sealed trait TokenContract extends ErgoNamesContracts {
   override val domain: String = "ErgoNames"
 }
 
@@ -77,7 +71,7 @@ sealed trait ProxyContract extends ErgoNamesContracts {
 //<editor-fold desc="Detailed Contract Types">
 /** // ===== Detailed Level Contracts =====
   */
-sealed trait NFTBoxGuardScriptContract extends NFTContract {
+sealed trait TokenBoxGuardScriptContract extends TokenContract {
   override val contractType: ContractType = ContractTypes.BoxGuardScript
 }
 

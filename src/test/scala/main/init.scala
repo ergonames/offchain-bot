@@ -1,12 +1,13 @@
 package main
 
-import contracts.YourProjectContracts
+import contracts.ErgoNamesContracts
 
 object init extends App {
   println("Hello World!")
 }
 
 object printContract extends App {
-  val proxyContract = YourProjectContracts.ProxyContract.contractScript
-  println(proxyContract)
+  val proxyContract = ErgoNamesContracts.ProxyContract.contractScript
+  val mintContract = ErgoNamesContracts.MintContract.contractScript
+  println(mintContract)
 }
