@@ -11,7 +11,7 @@
     // R5: SigmaProp => receiver sigmaProp
 
     // ===== Compile Time Constants ===== //
-    // _mintContractBytes: Coll[Byte] //base58 encoding of mint contract ergo tree hex string
+    // _singletonToken: Coll[Byte]
     // _minerFee: Long //miner fee in nano ergs
 
     // ===== Context Extension Variables ===== //
@@ -42,7 +42,7 @@
             }
 
             val validRegistryBox: Boolean = {
-                registryInputBox.propositionBytes == _mintContractBytes
+                (registryInputBox.tokens(0)._1 == stateBoxSingleton)
             }
 
             allOf(Coll(

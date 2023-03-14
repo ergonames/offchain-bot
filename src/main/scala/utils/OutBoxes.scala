@@ -262,4 +262,37 @@ class OutBoxes(ctx: BlockchainContext) {
       .build()
   }
 
+  def ergoNamesTokenOut(
+      receiver: Address,
+      ergoNameToken: Eip4Token,
+      amount: Double = 0.001
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(getAmount(amount))
+      .contract(
+        new ErgoTreeContract(
+          receiver.getErgoAddress.script,
+          this.ctx.getNetworkType
+        )
+      )
+      .mintToken(ergoNameToken)
+      .build()
+  }
+
+  def ergoNamesRegistryBox[K, V](
+      contract: ErgoContract,
+      singleton: ErgoToken,
+      tokenMap: PlasmaMap[K, V],
+      amount: Double = 0.001
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(getAmount(amount))
+      .contract(contract)
+      .tokens(singleton)
+      .registers(tokenMap.ergoValue)
+      .build()
+  }
+
 }

@@ -10,7 +10,7 @@
     // R4: AvlTree
 
     // ===== Compile Time Constants ===== //
-    //None
+    // _singletonToken: Coll[Byte]
 
     // ===== Context Extension Variables ===== //
     // ergonameHash: Coll[Byte] - hash of the name to register
@@ -57,11 +57,19 @@
         ))
     }
 
+    val transferToken: Boolean = {
+         allOf(Coll(
+            (updatedRegistryBox.tokens(0) == (SELF.tokens(0)._1, 1L)),
+            (updatedRegistryBox.tokens(0)._1 == _singletonToken)
+         ))
+    }
+
     val validRegistration: Boolean = {
 
          allOf(Coll(
             mintNewErgoName,
-            updateRegistry
+            updateRegistry,
+            transferToken
          ))
     }
 
