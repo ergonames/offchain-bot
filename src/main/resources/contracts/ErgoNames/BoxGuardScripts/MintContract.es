@@ -34,8 +34,12 @@
 
     val newErgoNameToken = mintBox.tokens(0)
 
+    val currentIndex = registryInputBox.R5[(Coll[Byte], Long)].get._2
+    val newIndex = updatedRegistryBox.R5[(Coll[Byte], Long)].get._2
+    val newErgoNameTokenInRegistry = updatedRegistryBox.R5[(Coll[Byte], Long)].get._1
+
     val mintNewErgoName = {
-        val validToken = newErgoNameToken == (tokenIdToRegister, 1)
+        val validToken = newErgoNameToken == (tokenIdToRegister, 1L)
         val validErgoNameName = mintBox.R4[Coll[Byte]].get == nameToRegister
         val validReceiver = mintBox.propositionBytes == receiverAddress.propBytes
 
@@ -50,10 +54,14 @@
         val updatedRegistry = registry.insert(Coll((ergonameHash, tokenIdToRegister)), proof).get
         val validRegistryUpdate = updatedRegistryBox.R4[AvlTree].get.digest == updatedRegistry.digest
         val validScript = updatedRegistryBox.propositionBytes == registryInputBox.propositionBytes
+        val validIndex = currentIndex + 1L == newIndex
+        val validErgoNamesTokenInRegister = newErgoNameTokenInRegistry == tokenIdToRegister
 
         allOf(Coll(
             validRegistryUpdate,
-            validScript
+            validScript,
+            validIndex,
+            validErgoNamesTokenInRegister
         ))
     }
 

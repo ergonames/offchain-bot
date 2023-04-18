@@ -1,0 +1,12 @@
+{
+  "Contracts": {
+    "mintContract": {
+      "contract": "t6t5rfAxrn6zUUJspvTS8JktwNejCm3yZ2YcFidWF48BexmbfARSUCMFJR7wN3AbEbv47b7y5LzhVDSwyvM3bmo1YghzqCHooVZXYFpAYiUiahNuC4hf6dHVAWauTibApz61FB7SRociSXTmsW9dPrzMWRLivuCU9ihnLHy3u773CKbNav2Yvm57gYqHp6f8g8HCQ4WEYBFG1Z16XYEuv8z44bZfjtLPS1FahVoLBhmvnZSeJG5aXFCymfKttHyBcrzGuF5PXyneaQnwbNHht14fK1yroBWm5WK1xfcmrpyv3UW8WErA1VRLc8xUWqJ54nBMwtQNJdindHayRUnhR2LRZFqYk",
+      "singleton": "489a6128353d8b52fc42c82473f60f5e024f025b5713ab63e8f2bc3e1132eaaf",
+      "initialTx": "3479be0e22a5f5cc318ca171f65115c3fc932e3d2e8599ab743efce8fac03a80"
+    },
+    "proxyContract": {
+      "contract": "34sQ9WYJ67tfGss9Za6jpiM6s1F9QAV2GR2Cvc3N5zJFVTuqTo68R9tBktFuwTZ7C67QX8xutEsV7Rsn8wUZno67EcRAf9hJ8wKZr6NDseFK6J3aCk76i3VWD3uqrnwqkQX1hEK8MVu1uXhoizUuKkuNQtKwYeMUK6yG3B3id4SoeQzgx24pqJEgw6cTjrNirjib7ossgbk3WDMCGpQt6htYDZWcmBPALxaxjrZWBRBsdNeVWFZckZ"
+    }
+  }
+}

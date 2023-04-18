@@ -10,42 +10,33 @@ case class ContractsConfig(
 )
 
 case class Config(
-    stateContract: StateContract,
-    issuerContract: IssuerContract,
+    mintContract: MintContract,
     proxyContract: ProxyContract,
-    collectionToken: String
 )
-case class StateContract(
+case class MintContract(
     contract: String,
-    singleton: String
-)
-case class IssuerContract(
-    contract: String
+    singleton: String,
+    initialTx: String,
 )
 case class ProxyContract(
     contract: String
 )
 
 class conf(
-    stateContract: String,
+    mintContract: String,
     singleton: String,
-    issuerContract: String,
-    proxyContract: String,
-    collectionToken: String
+    initialTx: String,
+    proxyContract: String
 ) {
-  val stateContractInstance: StateContract =
-    StateContract(stateContract, singleton)
-  val issuerContractInstance: IssuerContract =
-    IssuerContract(issuerContract)
-  val proxyContractInstance: ProxyContract = ProxyContract(proxyContract)
+  private val mintContractInstance: MintContract =
+    MintContract(mintContract, singleton, initialTx)
+  private val proxyContractInstance: ProxyContract = ProxyContract(proxyContract)
 
-  val conf = Config(
-    stateContractInstance,
-    issuerContractInstance,
-    proxyContractInstance,
-    collectionToken
+  val conf: Config = Config(
+    mintContractInstance,
+    proxyContractInstance
   )
-  val newConfig: ContractsConfig = ContractsConfig(conf)
+  private val newConfig: ContractsConfig = ContractsConfig(conf)
   private val gson = new GsonBuilder().setPrettyPrinting().create()
 
   def write(filePath: String): Unit = {

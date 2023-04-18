@@ -52,6 +52,8 @@ libraryDependencies ++= Seq(
 )
 libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.14"
 
+libraryDependencies += "org.postgresql" % "postgresql" % "42.5.4"
+
 resolvers ++= Seq(
   "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
   "SonaType" at "https://oss.sonatype.org/content/groups/public",

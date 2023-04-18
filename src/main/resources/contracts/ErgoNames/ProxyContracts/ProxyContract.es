@@ -42,7 +42,7 @@
             }
 
             val validRegistryBox: Boolean = {
-                (registryInputBox.tokens(0)._1 == stateBoxSingleton)
+                (registryInputBox.tokens(0)._1 == _singletonToken)
             }
 
             allOf(Coll(

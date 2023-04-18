@@ -15,11 +15,11 @@ import scala.collection.mutable.ListBuffer
 
 class OutBoxes(ctx: BlockchainContext) {
 
-  private def getAmount(amount: Double): Long = {
+  protected def getAmount(amount: Double): Long = {
     (amount * Parameters.OneErg).toLong
   }
-  private val txBuilder = this.ctx.newTxBuilder()
-  private val minAmount = this.getAmount(0.001)
+  protected val txBuilder: UnsignedTransactionBuilder = this.ctx.newTxBuilder()
+  protected val minAmount: Long = this.getAmount(0.001)
 
   def pictureNFTHelper(
       inputBox: InputBox,
@@ -259,39 +259,6 @@ class OutBoxes(ctx: BlockchainContext) {
           this.ctx.getNetworkType
         )
       )
-      .build()
-  }
-
-  def ergoNamesTokenOut(
-      receiver: Address,
-      ergoNameToken: Eip4Token,
-      amount: Double = 0.001
-  ): OutBox = {
-    this.txBuilder
-      .outBoxBuilder()
-      .value(getAmount(amount))
-      .contract(
-        new ErgoTreeContract(
-          receiver.getErgoAddress.script,
-          this.ctx.getNetworkType
-        )
-      )
-      .mintToken(ergoNameToken)
-      .build()
-  }
-
-  def ergoNamesRegistryBox[K, V](
-      contract: ErgoContract,
-      singleton: ErgoToken,
-      tokenMap: PlasmaMap[K, V],
-      amount: Double = 0.001
-  ): OutBox = {
-    this.txBuilder
-      .outBoxBuilder()
-      .value(getAmount(amount))
-      .contract(contract)
-      .tokens(singleton)
-      .registers(tokenMap.ergoValue)
       .build()
   }
 

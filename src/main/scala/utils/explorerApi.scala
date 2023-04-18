@@ -8,6 +8,7 @@ import org.ergoplatform.appkit.impl.{InputBoxImpl, ScalaBridge}
 import org.ergoplatform.explorer.client.model.{
   InputInfo,
   OutputInfo,
+  TokenInfo,
   TransactionInfo
 }
 import org.ergoplatform.explorer.client.{DefaultApi, ExplorerApiClient}
@@ -15,6 +16,7 @@ import org.ergoplatform.restapi.client._
 
 import java.util
 import scala.collection.JavaConversions._
+import scala.jdk.CollectionConverters._
 
 class explorerApi(
     apiUrl: String,
@@ -46,7 +48,18 @@ class explorerApi(
     }
   }
 
-  def getBoxesFromTokenID(tokenId: String): OutputInfo = { //returns latest box the token has been in
+  def getTokenByID(tokenId: String): TokenInfo = {
+    val api = this.getExplorerApi(this.apiUrl)
+    val res =
+      api.getApiV1TokensP1(tokenId).execute().body()
+    try {
+      res
+    } catch {
+      case e: Exception => null
+    }
+  }
+
+  def getLatestSpentBoxFromTokenID(tokenId: String): OutputInfo = { //returns latest box the token has been in
     val api = this.getExplorerApi(this.apiUrl)
     var res = api.getApiV1BoxesBytokenidP1(tokenId, 0, 1).execute().body()
     val offset = res.getTotal - 1
@@ -57,6 +70,35 @@ class explorerApi(
       case e: Exception => println(e); null
     }
   }
+
+  def getBoxesFromTokenID(tokenId: String): Array[OutputInfo] = {
+    val api = this.getExplorerApi(this.apiUrl)
+    var limit = 100
+    var offset = 0
+    var allBoxes = Array[OutputInfo]()
+
+    while (true){
+      val res: Array[OutputInfo] = api
+        .getApiV1BoxesBytokenidP1(tokenId, offset, limit)
+        .execute()
+        .body().getItems.asScala.toArray
+
+      allBoxes = allBoxes ++ res
+
+      if(res == null){
+        return allBoxes
+      }
+
+      if(res.length < limit){
+        return allBoxes
+      }
+
+      offset += limit
+    }
+
+    allBoxes
+  }
+
 
   def getBoxesfromTransaction(txId: String): TransactionInfo = {
     val api = this.getExplorerApi(this.apiUrl)
@@ -189,24 +231,6 @@ class explorerApi(
       .additionalRegisters(registers)
     return ScalaBridge.isoErgoTransactionOutput.to(boxConversion)
 
-  }
-
-  def getWinningTicketWithR5(txId: String, tokenId: Long): String = {
-    val api = this.getExplorerApi(this.apiUrl)
-    val tx = api.getApiV1TransactionsP1(txId).execute().body()
-    val issuerR5 = getErgoBoxfromIDNoApi(tx.getInputs.get(0))
-      .additionalRegisters(ErgoBox.R5)
-      .value
-      .toString
-      .toLong
-    if (issuerR5 == tokenId) {
-      return tx.getInputs.get(0).getBoxId //issuer box id is tokenId
-    }
-    val newTx = tx.getOutputs.get(1).getSpentTransactionId
-    if (newTx == null) {
-      return null
-    }
-    getWinningTicketWithR5(newTx, tokenId)
   }
 
 }

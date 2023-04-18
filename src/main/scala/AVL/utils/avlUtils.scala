@@ -1,14 +1,18 @@
 package AVL.utils
 
-import configs.{AVLJsonHelper, AvlJson}
-
-import io.getblok.getblok_plasma.collections.{PlasmaMap}
+import configs.{AVLJsonHelper, AvlJson, ErgoNamesInsert}
+import io.getblok.getblok_plasma.collections.PlasmaMap
 
 import scala.collection.mutable
 
 object avlUtils {
 
-  def exportAVL[K, V](map: PlasmaMap[K, V]): AVLJsonHelper = {
+  def exportAVL[K, V](
+      map: PlasmaMap[K, V],
+      tokenId: String,
+      index: Long,
+      name: Array[Byte]
+  ): AVLJsonHelper = {
 
     val manifest: io.getblok.getblok_plasma.collections.Manifest =
       map.getManifest(255)
@@ -21,6 +25,9 @@ object avlUtils {
       manifest.toHexStrings._2
 
     new AVLJsonHelper(
+      tokenId,
+      index,
+      name,
       manifestHex,
       manifestDigestHex,
       manifestSubTreeHex.toArray

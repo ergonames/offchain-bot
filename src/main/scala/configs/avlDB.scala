@@ -1,16 +1,27 @@
 package configs
 
-import com.google.gson.{GsonBuilder}
+import com.google.gson.GsonBuilder
 
+import java.io.{FileWriter, Writer}
 import scala.io.Source
 
 case class AvlJson(
+    latestInsert: ErgoNamesInsert,
     manifestHex: String,
     digestHex: String,
     subTreeHex: Array[String]
 )
 
+case class ErgoNamesInsert(
+    tokenId: String,
+    index: Long,
+    name: Array[Byte]
+)
+
 class AVLJsonHelper(
+    tokenId: String,
+    index: Long,
+    name: Array[Byte],
     manifestHex: String,
     digestHex: String,
     subTreeHex: Array[String]
@@ -19,7 +30,10 @@ class AVLJsonHelper(
     .setPrettyPrinting()
     .create()
 
+  private val latestInsert = ErgoNamesInsert(tokenId, index, name)
+
   private val conf = AvlJson(
+    latestInsert,
     manifestHex,
     digestHex,
     subTreeHex
@@ -36,6 +50,12 @@ class AVLJsonHelper(
 
   def read: AvlJson = {
     gson.fromJson(gson.toJson(conf), classOf[AvlJson])
+  }
+
+  def write(filePath: String): Unit = {
+    val writer: Writer = new FileWriter(filePath)
+    writer.write(this.getJsonString)
+    writer.close()
   }
 }
 

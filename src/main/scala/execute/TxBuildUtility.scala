@@ -2,6 +2,7 @@ package execute
 
 import AVL.ErgoName.{ErgoName, ErgoNameHash}
 import contracts.ErgoNamesContracts
+import io.getblok.getblok_plasma.PlasmaParameters
 import io.getblok.getblok_plasma.collections.{
   LocalPlasmaMap,
   OpResult,
@@ -17,11 +18,18 @@ import org.ergoplatform.appkit.impl.{Eip4TokenBuilder, ErgoTreeContract}
 import org.ergoplatform.appkit.scalaapi.ErgoValueBuilder
 import scalan.RType.LongType
 import scorex.crypto.encode.Base16
+import sigmastate.AvlTreeFlags
 import sigmastate.basics.DLogProtocol
 import sigmastate.eval.Colls
 import special.collection.Coll
 import utils.RegistrySync.syncRegistry
-import utils.{ContractCompile, OutBoxes, TransactionHelper, explorerApi}
+import utils.{
+  ContractCompile,
+  ErgoNamesOutBox,
+  OutBoxes,
+  TransactionHelper,
+  explorerApi
+}
 
 import java.util
 import scala.collection.JavaConverters._
@@ -38,7 +46,7 @@ class TxBuildUtility(
   private val api = new explorerApi(
     DefaultNodeInfo(ctx.getNetworkType).explorerUrl
   )
-  private val outBoxObj = new OutBoxes(ctx)
+  private val ErgoNamesOutBox = new ErgoNamesOutBox(ctx)
   private val txHelper = new TransactionHelper(
     ctx = ctx,
     walletMnemonic = txOperatorMnemonic,
@@ -50,7 +58,9 @@ class TxBuildUtility(
   def mintErgoNameToken(
       proxyInput: InputBox,
       registerBox: InputBox,
-      initialTransactionId: String
+      initialTransactionId: String =
+        "89e19f6e51a569cd1c73c361657fba2c07a2d4e55cb1b02de9e20b0718fd6d04",
+      tokenMap: PlasmaMap[ErgoNameHash, ErgoId]
   ): SignedTransaction = {
 
     val inputs: ListBuffer[InputBox] = new ListBuffer[InputBox]()
@@ -63,12 +73,27 @@ class TxBuildUtility(
       .getValue
       .asInstanceOf[special.sigma.SigmaProp]
 
+    val registryR5: (Coll[Byte], Long) = registerBox.getRegisters
+      .get(1)
+      .getValue
+      .asInstanceOf[(Coll[Byte], Long)]
+
     val recipient: Address = new org.ergoplatform.appkit.SigmaProp(r5)
       .toAddress(this.ctx.getNetworkType)
 
-    val tokenMap: PlasmaMap[ErgoNameHash, ErgoId] = syncRegistry(
-      initialTransactionId
-    )
+//    val tokenMap: PlasmaMap[ErgoNameHash, ErgoId] =
+//      syncRegistry(api, registerBox.getTokens.get(0))
+
+//    tokenMap.insert(
+//      (
+//        ErgoName("hello").toErgoNameHash -> new ErgoToken(
+//          "cf3b6e369c17c7d9eb318799759362e55955ba02d3bdef0bad18fc46101ab016",
+//          1
+//        ).getId
+//      )
+//    )
+
+    println("registering: " + new String(nameToRegister))
 
     val ergoname: ErgoNameHash = ErgoName(
       new String(nameToRegister)
@@ -76,8 +101,8 @@ class TxBuildUtility(
 
     val tokenId = registerBox.getId
 
-    val ergonameData: Seq[(ErgoNameHash, ErgoId)] = Seq(ergoname -> tokenId)
-    val result: ProvenResult[ErgoId] = tokenMap.insert(ergonameData: _*)
+    val result: ProvenResult[ErgoId] = tokenMap.insert((ergoname, tokenId))
+    println("Final Token Map Hex: " + tokenMap.ergoValue.toHex)
     val opResults: Seq[OpResult[ErgoId]] = result.response
     val proof: Proof = result.proof
 
@@ -104,12 +129,14 @@ class TxBuildUtility(
     )
 
     val recipientOutBox =
-      outBoxObj.ergoNamesTokenOut(recipient, ergoNameRecipientToken)
+      ErgoNamesOutBox.ergoNamesTokenOut(recipient, ergoNameRecipientToken)
     val registryOutBox =
-      outBoxObj.ergoNamesRegistryBox(
+      ErgoNamesOutBox.ergoNamesRegistryBox(
         ergoNamesMintContract,
         registerBoxInput.getTokens.get(0),
-        tokenMap
+        tokenMap,
+        ergoNameRecipientToken,
+        registryR5._2 + 1L
       )
 
     val unsignedTx: UnsignedTransaction = txHelper.buildUnsignedTransaction(
