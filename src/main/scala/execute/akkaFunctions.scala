@@ -11,13 +11,29 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.appkit.impl.InputBoxImpl
-import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoId, ErgoToken, ErgoValue, InputBox, SigmaProp, SignedTransaction}
+import org.ergoplatform.appkit.{
+  Address,
+  BlockchainContext,
+  ErgoId,
+  ErgoToken,
+  ErgoValue,
+  InputBox,
+  SigmaProp,
+  SignedTransaction
+}
 import org.ergoplatform.explorer.client.model.OutputInfo
 import special.collection.Coll
 import io.getblok.getblok_plasma.PlasmaParameters
 import io.getblok.getblok_plasma.collections.PlasmaMap
 import sigmastate.AvlTreeFlags
-import utils.{BoxAPI, BoxJson, ContractCompile, NodeBoxJson, TransactionHelper, explorerApi}
+import utils.{
+  BoxAPI,
+  BoxJson,
+  ContractCompile,
+  NodeBoxJson,
+  TransactionHelper,
+  explorerApi
+}
 import execute.TxBuildUtility
 import utils.RegistrySync.syncRegistry
 
@@ -90,9 +106,8 @@ class akkaFunctions {
       new ErgoToken(contractsConf.Contracts.mintContract.singleton, 1)
     )
 //
-//    println(plasmaMap.ergoValue.toHex)
-//    println(syncedTokenMap.ergoValue.toHex)
-
+    println("Json AVL Digest: " + plasmaMap.ergoValue.toHex)
+    println("Synced AVL Digest: " + syncedTokenMap.ergoValue.toHex)
 
     syncedTokenMap
   }
@@ -128,7 +143,7 @@ class akkaFunctions {
     boxes.foreach(box => {
       val signedTx =
         txBuilderUtil.mintErgoNameToken(box, registerBox, tokenMap = tokenMap)
-      val hash = txHelper.sendTx(signedTx)
+//      val hash = txHelper.sendTx(signedTx)
       registerBox = signedTx.getOutputsToSpend.get(1)
       val registerBoxR5 = registerBox.getRegisters
         .get(1)
@@ -142,9 +157,9 @@ class akkaFunctions {
         .getValue
         .asInstanceOf[Coll[Byte]]
         .toArray
-      println("Mint Tx: " + hash)
+      println("Mint Tx: " + signedTx)
     })
-    exportAVL(tokenMap, lastTokenId, lastIndex, lastErgoName).write("avl.json")
+//    exportAVL(tokenMap, lastTokenId, lastIndex, lastErgoName).write("avl.json")
   }
 
   def main(): Unit = {
