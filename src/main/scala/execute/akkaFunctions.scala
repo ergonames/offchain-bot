@@ -3,7 +3,13 @@ package execute
 import AVL.ErgoName.{ErgoName, ErgoNameHash}
 import AVL.utils.avlUtils
 import AVL.utils.avlUtils.{AVLFromExport, exportAVL}
-import configs.{AVLJsonHelper, AvlJson, conf, serviceOwnerConf}
+import configs.{
+  AVLJsonHelper,
+  AvlJson,
+  ErgoNamesInsertHelper,
+  conf,
+  serviceOwnerConf
+}
 import contracts.ErgoNamesContracts
 
 import java.util.{HexFormat, Map => JMap}
@@ -11,16 +17,36 @@ import scala.collection.JavaConverters._
 import scala.collection.mutable
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.appkit.impl.InputBoxImpl
-import org.ergoplatform.appkit.{Address, BlockchainContext, ErgoId, ErgoToken, ErgoValue, InputBox, SigmaProp, SignedTransaction}
+import org.ergoplatform.appkit.{
+  Address,
+  BlockchainContext,
+  ErgoId,
+  ErgoToken,
+  ErgoValue,
+  InputBox,
+  SigmaProp,
+  SignedTransaction
+}
 import org.ergoplatform.explorer.client.model.OutputInfo
 import special.collection.Coll
 import io.getblok.getblok_plasma.PlasmaParameters
-import io.getblok.getblok_plasma.collections.PlasmaMap
+import io.getblok.getblok_plasma.collections.{LocalPlasmaMap, PlasmaMap}
 import sigmastate.AvlTreeFlags
-import utils.{BoxAPI, BoxJson, ContractCompile, NodeBoxJson, TransactionHelper, explorerApi}
+import utils.{
+  BoxAPI,
+  BoxJson,
+  ContractCompile,
+  NodeBoxJson,
+  TransactionHelper,
+  explorerApi
+}
 import execute.TxBuildUtility
+import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.db.LDBVersionedStore
 import utils.RegistrySync.syncRegistry
 
+import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util
 import scala.collection.JavaConverters._
@@ -50,9 +76,15 @@ class akkaFunctions {
 
   println("Service Runner Address: " + txHelper.senderAddress)
 
-  def getTokenMap(
+  private val ldbFile = new File("./ErgonamesPlasmaDB")
+  private val ldbStore = new LDBVersionedStore(ldbFile, 10)
+  private val avlStorage = new VersionedLDBAVLStorage[Digest32](
+    ldbStore,
+    PlasmaParameters.default.toNodeParams
+  )(Blake2b256)
+  private def getTokenMap(
       latestRegisterBox: OutputInfo
-  ): PlasmaMap[ErgoNameHash, ErgoId] = {
+  ): LocalPlasmaMap[ErgoNameHash, ErgoId] = {
     val latestRegisterBoxRenderedValue =
       latestRegisterBox.getAdditionalRegisters.get("R5").renderedValue
     val latestRegisterBoxElements =
@@ -64,42 +96,40 @@ class akkaFunctions {
     val latestErgoNameTokenIndex =
       latestRegisterBoxElements(1).toInt
 
-    val plasmaMap = new PlasmaMap[ErgoNameHash, ErgoId](
+    val plasmaMap = new LocalPlasmaMap[ErgoNameHash, ErgoId](
+      avlStorage,
       AvlTreeFlags.AllOperationsAllowed,
       PlasmaParameters.default
     )
-    val avlJson = AVLJsonHelper.read("avl.json")
-    println(avlJson.latestInsert.index)
-    println(latestErgoNameTokenIndex.toLong)
+    try {
+      val avlJson = ErgoNamesInsertHelper.read("avl.json")
+      println(avlJson.latestInsert.index)
+      println(latestErgoNameTokenIndex.toLong)
 
-//    if (avlJson.latestInsert.index >= latestErgoNameTokenIndex.toLong) {
-//      AVLFromExport(avlJson, plasmaMap)
-//      plasmaMap
-//    } else {
-//      println("Syncing AVL DB From scratch")
-//      syncRegistry(
-//        exp,
-//        new ErgoToken(contractsConf.Contracts.mintContract.singleton, 1)
-//      )
-//    }
+      if (avlJson.latestInsert.index >= latestErgoNameTokenIndex.toLong) {
+        plasmaMap
+      } else {
+        println("Syncing AVL DB From scratch")
+        syncRegistry(
+          exp,
+          ldbFile,
+          new ErgoToken(contractsConf.Contracts.mintContract.singleton, 1)
+        )
+      }
+    } catch {
+      case e: Exception =>
+        syncRegistry(
+          exp,
+          ldbFile,
+          new ErgoToken(contractsConf.Contracts.mintContract.singleton, 1)
+        )
+    }
 
-//    AVLFromExport(avlJson, plasmaMap)
-//
-    val syncedTokenMap = syncRegistry(
-      exp,
-      new ErgoToken(contractsConf.Contracts.mintContract.singleton, 1)
-    )
-//
-//    println(plasmaMap.ergoValue.toHex)
-//    println(syncedTokenMap.ergoValue.toHex)
-
-
-    syncedTokenMap
   }
 
   def mint(
       boxJson: Array[BoxJson],
-      tokenMap: PlasmaMap[ErgoNameHash, ErgoId]
+      tokenMap: LocalPlasmaMap[ErgoNameHash, ErgoId]
   ): Unit = { //mints tickets
 
     val boxAPIObj = new BoxAPI(serviceConf.apiUrl, serviceConf.nodeUrl)
@@ -128,7 +158,7 @@ class akkaFunctions {
     boxes.foreach(box => {
       val signedTx =
         txBuilderUtil.mintErgoNameToken(box, registerBox, tokenMap = tokenMap)
-      val hash = txHelper.sendTx(signedTx)
+//      val hash = txHelper.sendTx(signedTx)
       registerBox = signedTx.getOutputsToSpend.get(1)
       val registerBoxR5 = registerBox.getRegisters
         .get(1)
@@ -142,9 +172,11 @@ class akkaFunctions {
         .getValue
         .asInstanceOf[Coll[Byte]]
         .toArray
-      println("Mint Tx: " + hash)
+      println("Mint Tx: " + signedTx)
     })
-    exportAVL(tokenMap, lastTokenId, lastIndex, lastErgoName).write("avl.json")
+    (new ErgoNamesInsertHelper(lastTokenId, lastIndex, lastErgoName)).write(
+      "./avl.json"
+    )
   }
 
   def main(): Unit = {
@@ -180,7 +212,7 @@ class akkaFunctions {
 
   def validateProxyBox(
       box: BoxJson,
-      tokenMap: PlasmaMap[ErgoNameHash, ErgoId],
+      tokenMap: LocalPlasmaMap[ErgoNameHash, ErgoId],
       value: Long
   ): Boolean = {
 
@@ -201,7 +233,7 @@ class akkaFunctions {
         .isEmpty
 
     } catch {
-      case e: Exception => false
+      case e: Exception => println(e); false
     }
 
   }

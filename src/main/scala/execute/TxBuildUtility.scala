@@ -60,7 +60,7 @@ class TxBuildUtility(
       registerBox: InputBox,
       initialTransactionId: String =
         "89e19f6e51a569cd1c73c361657fba2c07a2d4e55cb1b02de9e20b0718fd6d04",
-      tokenMap: PlasmaMap[ErgoNameHash, ErgoId]
+      tokenMap: LocalPlasmaMap[ErgoNameHash, ErgoId]
   ): SignedTransaction = {
 
     val inputs: ListBuffer[InputBox] = new ListBuffer[InputBox]()

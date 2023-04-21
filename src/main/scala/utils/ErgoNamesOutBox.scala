@@ -1,6 +1,6 @@
 package utils
 
-import io.getblok.getblok_plasma.collections.PlasmaMap
+import io.getblok.getblok_plasma.collections.{LocalPlasmaMap, PlasmaMap}
 import org.ergoplatform.ErgoBox
 import org.ergoplatform.appkit.JavaHelpers.JLongRType
 import org.ergoplatform.appkit.impl.ErgoTreeContract
@@ -49,7 +49,7 @@ class ErgoNamesOutBox(ctx: BlockchainContext) extends OutBoxes(ctx) {
   def ergoNamesRegistryBox[K, V](
       contract: ErgoContract,
       singleton: ErgoToken,
-      tokenMap: PlasmaMap[K, V],
+      tokenMap: LocalPlasmaMap[K, V],
       recipientErgoNameToken: Eip4Token,
       index: Long,
       amount: Double = 0.001

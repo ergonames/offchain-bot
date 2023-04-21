@@ -2,32 +2,38 @@ package utils
 
 import AVL.ErgoName.{ErgoName, ErgoNameHash}
 import io.getblok.getblok_plasma.{ByteConversion, PlasmaParameters}
-import io.getblok.getblok_plasma.collections.PlasmaMap
+import io.getblok.getblok_plasma.collections.{LocalPlasmaMap, PlasmaMap, ProvenResult}
 import org.ergoplatform.appkit.{ErgoId, ErgoToken}
+import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.db.LDBVersionedStore
 import sigmastate.AvlTreeFlags
 
 import java.util
 import utils.DatabaseUtils.readRegistryInsertion
-import io.getblok.getblok_plasma.collections.ProvenResult
 
+import java.io.File
 import scala.collection.mutable.ListBuffer
 import scala.util.Random
 
 object RegistrySync {
 
-  private def createEmptyRegistry(): PlasmaMap[ErgoNameHash, ErgoId] = {
-    val registry = new PlasmaMap[ErgoNameHash, ErgoId](
-      AvlTreeFlags.AllOperationsAllowed,
-      PlasmaParameters.default
-    )
-    registry
+  private def createEmptyRegistry(avlLdbFile: File): LocalPlasmaMap[ErgoNameHash, ErgoId] = {
+
+    avlLdbFile.delete()
+
+     val ldbStore = new LDBVersionedStore(avlLdbFile, 10)
+     val avlStorage = new VersionedLDBAVLStorage[Digest32](ldbStore, PlasmaParameters.default.toNodeParams)(Blake2b256)
+
+    new LocalPlasmaMap[ErgoNameHash, ErgoId](avlStorage, AvlTreeFlags.AllOperationsAllowed, PlasmaParameters.default)
   }
 
   def syncRegistry(
       exp: explorerApi,
+      avlLdbFile: File,
       singleton: ErgoToken
-  ): PlasmaMap[ErgoNameHash, ErgoId] = {
-    val registry = createEmptyRegistry()
+  ): LocalPlasmaMap[ErgoNameHash, ErgoId] = {
+    val registry = createEmptyRegistry(avlLdbFile)
     val res = exp.getBoxesFromTokenID(singleton.getId.toString)
     val tokenList = new ListBuffer[(Long, (String, String))]
     for (e <- res) {
