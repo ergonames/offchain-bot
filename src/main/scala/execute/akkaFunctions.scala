@@ -12,7 +12,6 @@ import configs.{
 }
 import contracts.ErgoNamesContracts
 
-import java.util.{HexFormat, Map => JMap}
 import scala.collection.JavaConverters._
 import scala.collection.mutable
 import org.ergoplatform.ErgoBox
@@ -42,6 +41,7 @@ import utils.{
 }
 import execute.TxBuildUtility
 import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
+import scorex.crypto.encode.Base64
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.db.LDBVersionedStore
 import utils.RegistrySync.syncRegistry
@@ -49,6 +49,7 @@ import utils.RegistrySync.syncRegistry
 import java.io.File
 import java.nio.charset.StandardCharsets
 import java.util
+import javax.xml.bind.DatatypeConverter
 import scala.collection.JavaConverters._
 import scala.collection.convert.ImplicitConversions.`collection asJava`
 import scala.collection.mutable.ListBuffer
@@ -77,6 +78,7 @@ class akkaFunctions {
   println("Service Runner Address: " + txHelper.senderAddress)
 
   private val ldbFile = new File("./ErgonamesPlasmaDB")
+
   private val ldbStore = new LDBVersionedStore(ldbFile, 10)
   private val avlStorage = new VersionedLDBAVLStorage[Digest32](
     ldbStore,
@@ -103,8 +105,8 @@ class akkaFunctions {
     )
     try {
       val avlJson = ErgoNamesInsertHelper.read("avl.json")
-      println(avlJson.latestInsert.index)
-      println(latestErgoNameTokenIndex.toLong)
+//      println(avlJson.latestInsert.index)
+//      println(latestErgoNameTokenIndex.toLong)
 
       if (avlJson.latestInsert.index >= latestErgoNameTokenIndex.toLong) {
         plasmaMap
@@ -112,17 +114,19 @@ class akkaFunctions {
         println("Syncing AVL DB From scratch")
         syncRegistry(
           exp,
-          ldbFile,
-          new ErgoToken(contractsConf.Contracts.mintContract.singleton, 1)
+          new ErgoToken(contractsConf.Contracts.mintContract.singleton, 1),
+          plasmaMap
         )
+        plasmaMap
       }
     } catch {
       case e: Exception =>
+        println("Exception Caught, Syncing AVL DB From scratch");
         syncRegistry(
           exp,
-          ldbFile,
-          new ErgoToken(contractsConf.Contracts.mintContract.singleton, 1)
-        )
+          new ErgoToken(contractsConf.Contracts.mintContract.singleton, 1),
+          plasmaMap
+        ); plasmaMap
     }
 
   }
@@ -158,7 +162,7 @@ class akkaFunctions {
     boxes.foreach(box => {
       val signedTx =
         txBuilderUtil.mintErgoNameToken(box, registerBox, tokenMap = tokenMap)
-//      val hash = txHelper.sendTx(signedTx)
+      val hash = txHelper.sendTx(signedTx)
       registerBox = signedTx.getOutputsToSpend.get(1)
       val registerBoxR5 = registerBox.getRegisters
         .get(1)
@@ -172,9 +176,16 @@ class akkaFunctions {
         .getValue
         .asInstanceOf[Coll[Byte]]
         .toArray
-      println("Mint Tx: " + signedTx)
+      println("Mint Tx: " + hash)
     })
-    (new ErgoNamesInsertHelper(lastTokenId, lastIndex, lastErgoName)).write(
+
+    val ergoname: String = DatatypeConverter.printHexBinary(
+      ErgoName(
+        new String(lastErgoName)
+      ).toErgoNameHash.hashedName
+    )
+
+    (new ErgoNamesInsertHelper(lastTokenId, lastIndex, ergoname)).write(
       "./avl.json"
     )
   }
@@ -220,20 +231,26 @@ class akkaFunctions {
       val ergoNameBytes: String = box.additionalRegisters.R4.renderedValue
 
       val ergoNameToRegister: ErgoNameHash = ErgoName(
-        new String(HexFormat.of.parseHex(ergoNameBytes))
+        new String(DatatypeConverter.parseHexBinary(ergoNameBytes))
       ).toErgoNameHash
 
-      box.additionalRegisters.R4 != null && box.additionalRegisters.R5 != null && box.value >= value && tokenMap
-        .lookUp(ergoNameToRegister)
-        .response
-        .toArray
-        .head
-        .tryOp
-        .get
-        .isEmpty
+      if (
+        box.additionalRegisters.R4 != null && box.additionalRegisters.R5 != null && box.value >= value
+      ) {
+        val lookUpResponse = tokenMap
+          .lookUp(ergoNameToRegister)
+          .response
+          .toArray
+          .head
+          .tryOp
+          .get
+          .isEmpty
 
+        return lookUpResponse
+      }
+      false
     } catch {
-      case e: Exception => println(e); false
+      case e: Exception => false
     }
 
   }

@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  ergonames-offchain:
+    build: .
+    restart: unless-stopped
+    volumes:
+      - ./serviceOwner.json:/app/serviceOwner.json
+      - ./ErgonamesPlasmaDB

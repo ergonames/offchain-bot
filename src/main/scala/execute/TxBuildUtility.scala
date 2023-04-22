@@ -58,8 +58,6 @@ class TxBuildUtility(
   def mintErgoNameToken(
       proxyInput: InputBox,
       registerBox: InputBox,
-      initialTransactionId: String =
-        "89e19f6e51a569cd1c73c361657fba2c07a2d4e55cb1b02de9e20b0718fd6d04",
       tokenMap: LocalPlasmaMap[ErgoNameHash, ErgoId]
   ): SignedTransaction = {
 
@@ -102,7 +100,7 @@ class TxBuildUtility(
     val tokenId = registerBox.getId
 
     val result: ProvenResult[ErgoId] = tokenMap.insert((ergoname, tokenId))
-    println("Final Token Map Hex: " + tokenMap.ergoValue.toHex)
+//    println("Final Token Map Hex: " + tokenMap.ergoValue.toHex)
     val opResults: Seq[OpResult[ErgoId]] = result.response
     val proof: Proof = result.proof
 

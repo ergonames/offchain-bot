@@ -2,7 +2,11 @@ package utils
 
 import AVL.ErgoName.{ErgoName, ErgoNameHash}
 import io.getblok.getblok_plasma.{ByteConversion, PlasmaParameters}
-import io.getblok.getblok_plasma.collections.{LocalPlasmaMap, PlasmaMap, ProvenResult}
+import io.getblok.getblok_plasma.collections.{
+  LocalPlasmaMap,
+  PlasmaMap,
+  ProvenResult
+}
 import org.ergoplatform.appkit.{ErgoId, ErgoToken}
 import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
 import scorex.crypto.hash.{Blake2b256, Digest32}
@@ -14,26 +18,31 @@ import utils.DatabaseUtils.readRegistryInsertion
 
 import java.io.File
 import scala.collection.mutable.ListBuffer
+import scala.reflect.io.Directory
 import scala.util.Random
 
 object RegistrySync {
 
-  private def createEmptyRegistry(avlLdbFile: File): LocalPlasmaMap[ErgoNameHash, ErgoId] = {
+  private def createEmptyRegistry(): LocalPlasmaMap[ErgoNameHash, ErgoId] = {
+    val ldbName = "ErgoNamesPlasmaDB"
+    val ldbStore = new LDBVersionedStore(new File(ldbName), 0)
+    val avlStorage = new VersionedLDBAVLStorage[Digest32](
+      ldbStore,
+      PlasmaParameters.default.toNodeParams
+    )(Blake2b256)
 
-    avlLdbFile.delete()
-
-     val ldbStore = new LDBVersionedStore(avlLdbFile, 10)
-     val avlStorage = new VersionedLDBAVLStorage[Digest32](ldbStore, PlasmaParameters.default.toNodeParams)(Blake2b256)
-
-    new LocalPlasmaMap[ErgoNameHash, ErgoId](avlStorage, AvlTreeFlags.AllOperationsAllowed, PlasmaParameters.default)
+    new LocalPlasmaMap[ErgoNameHash, ErgoId](
+      avlStorage,
+      AvlTreeFlags.AllOperationsAllowed,
+      PlasmaParameters.default
+    )
   }
 
   def syncRegistry(
       exp: explorerApi,
-      avlLdbFile: File,
-      singleton: ErgoToken
-  ): LocalPlasmaMap[ErgoNameHash, ErgoId] = {
-    val registry = createEmptyRegistry(avlLdbFile)
+      singleton: ErgoToken,
+      registry: LocalPlasmaMap[ErgoNameHash, ErgoId]
+  ): Unit = {
     val res = exp.getBoxesFromTokenID(singleton.getId.toString)
     val tokenList = new ListBuffer[(Long, (String, String))]
     for (e <- res) {
@@ -67,7 +76,6 @@ object RegistrySync {
 //      println(registry.ergoValue.toHex)
     })
 
-    registry
   }
 
 }

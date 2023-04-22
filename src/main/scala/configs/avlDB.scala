@@ -15,13 +15,13 @@ case class AvlJson(
 case class ErgoNamesInsert(
     tokenId: String,
     index: Long,
-    name: Array[Byte]
+    name: String
 )
 
 class AVLJsonHelper(
     tokenId: String,
     index: Long,
-    name: Array[Byte],
+    name: String,
     manifestHex: String,
     digestHex: String,
     subTreeHex: Array[String]

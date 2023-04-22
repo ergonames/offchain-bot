@@ -12,7 +12,7 @@ case class ErgoNamesIndex(
 class ErgoNamesInsertHelper(
                      tokenId: String,
                      index: Long,
-                     name: Array[Byte]
+                     name: String
                    ) {
   private val gson = new GsonBuilder()
     .setPrettyPrinting()

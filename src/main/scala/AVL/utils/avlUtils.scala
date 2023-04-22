@@ -11,7 +11,7 @@ object avlUtils {
       map: PlasmaMap[K, V],
       tokenId: String,
       index: Long,
-      name: Array[Byte]
+      name: String
   ): AVLJsonHelper = {
 
     val manifest: io.getblok.getblok_plasma.collections.Manifest =
