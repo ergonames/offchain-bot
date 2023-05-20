@@ -83,15 +83,19 @@
         val commitAge = HEIGHT - commitmentBox.creationInfo._1
         val validCommitmentAge = commitAge >= minCommitmentBoxAge && commitAge <= maxCommitmentBoxAge
 
-        val commitmentHash = commitmentBox.R4[Coll[Byte]].get
-        val expectedHash = blake2b256(
+        val commitmentSecret = userInputBox.R6[Coll[Byte]].get
+        val expectedCommitmentHash = commitmentBox.R4[Coll[Byte]].get
+        val calculatedHash = blake2b256(
             commitmentSecret ++ 
             receiverAddress.propBytes ++
             nameToRegister
         )
 
+        val validCommitment = calculatedHash == expectedCommitmentHash
+
         allOf(Coll(
-            validCommitmentAge
+            validCommitmentAge,
+            validCommitment
         )) 
     }
 

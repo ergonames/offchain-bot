@@ -9,6 +9,7 @@
     // ===== Box Registers ===== //
     // R4: Coll[Byte] => name to register
     // R5: SigmaProp => receiver sigmaProp
+    // R6: Coll[Byte] => commitment secret
 
     // ===== Compile Time Constants ===== //
     // _singletonToken: Coll[Byte]
