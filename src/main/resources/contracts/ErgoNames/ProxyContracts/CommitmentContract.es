@@ -14,14 +14,20 @@
     // _minerFee: Long
 
     val succesorBox = OUTPUTS(0)
+    val buyerPK = SELF.R5[SigmaProp].get
 
     val validSpend = {
         val validSpender = succesorBox.propositionBytes == _mintContractPropBytes
         val validFee = succesorBox.value >= SELF.value - _minerFee
 
+        val validR4 = succesorBox.R4[Coll[Byte]].isDefined
+        val validR5 = succesorBox.R5[SigmaProp].isDefined
+
         allOf(Coll(
             validSpender,
-            validFee
+            validFee,
+            validR4,
+            validR5
         ))
     }
 
@@ -45,5 +51,5 @@
         ))
     }
 
-    sigmaProp(validSpend || refund)
+    sigmaProp(validSpend || (refund && buyerPK))
 }
