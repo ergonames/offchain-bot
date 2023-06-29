@@ -62,6 +62,11 @@ object init extends App {
     1000000
   )
 
+  private val commitmentContract = compiler.compileCommitmentContract(
+    ErgoNamesContracts.CommitmentContract.contractScript,
+    new ErgoToken(singletonTokenID, 1)
+  )
+
   private val token = ErgoNamesOutBox.collectionTokenHelper(
     inputBoxList.get(0),
     "ErgoNames Singleton Test",

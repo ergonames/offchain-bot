@@ -33,4 +33,17 @@ class ContractCompile(ctx: BlockchainContext) {
     )
   }
 
+  def compileCommitmentContract(
+        contract: String,
+        singleton: ErgoToken,
+  ): ErgoContract = {
+    this.ctx.compileContract(
+      ConstantsBuilder
+        .create()
+        .item("_singletonToken", singleton.getId.getBytes)
+        .build(),
+      contract
+    )
+  }
+
 }
