@@ -58,6 +58,7 @@ class TxBuildUtility(
   def mintErgoNameToken(
       proxyInput: InputBox,
       registerBox: InputBox,
+      commitmentInput: InputBox,
       tokenMap: LocalPlasmaMap[ErgoNameHash, ErgoId]
   ): SignedTransaction = {
 
@@ -112,6 +113,7 @@ class TxBuildUtility(
 
     inputs.append(registerBoxInput)
     inputs.append(proxyInput)
+    inputs.append(commitmentInput)
 
     val ergoNameRecipientToken = new Eip4Token(
       tokenId.toString,
