@@ -1,11 +1,10 @@
 scalaVersion := "2.12.16"
 
-name := "yourProject-offchain-bot"
-organization := "com.yourProject"
-version := "1.2.0"
+name := "ergonames-offchain-bot"
+organization := "io.ergonames"
+version := "1.0.0"
 
-ThisBuild / version := "1.1.0"
-
+ThisBuild / version := "1.0.0"
 // Note, it's not required for you to define these three settings. These are
 // mostly only necessary if you intend to publish your library's binaries on a
 // place like Sonatype.
@@ -55,6 +54,8 @@ libraryDependencies ++= Seq(
 )
 libraryDependencies += "org.apache.httpcomponents" % "httpclient" % "4.5.14"
 
+libraryDependencies += "org.postgresql" % "postgresql" % "42.5.4"
+
 resolvers ++= Seq(
   "Sonatype Releases" at "https://oss.sonatype.org/content/repositories/releases/",
   "SonaType" at "https://oss.sonatype.org/content/groups/public",
@@ -76,9 +77,9 @@ assemblyMergeStrategy in assembly := {
   case other                                       => (assemblyMergeStrategy in assembly).value(other)
 }
 
-assemblyJarName in assembly := s"yourProject-offchain-${version.value}.jar"
+assemblyJarName in assembly := s"ergonames-offchain-${version.value}.jar"
 assemblyOutputPath in assembly := file(
-  s"./yourProject-offchain-${version.value}.jar/"
+  s"./ergonames-offchain-${version.value}.jar/"
 )
 mainClass in assembly := Some("app.Main")
 mainClass := Some("app.Main")

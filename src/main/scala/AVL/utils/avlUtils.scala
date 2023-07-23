@@ -1,11 +1,18 @@
 package AVL.utils
 
-import configs.{AVLJsonHelper, AvlJson}
+import configs.{AVLJsonHelper, AvlJson, ErgoNamesInsert}
 import work.lithos.plasma.collections.PlasmaMap
+
+import scala.collection.mutable
 
 object avlUtils {
 
-  def exportAVL[K, V](map: PlasmaMap[K, V]): AVLJsonHelper = {
+  def exportAVL[K, V](
+      map: PlasmaMap[K, V],
+      tokenId: String,
+      index: Long,
+      name: String
+  ): AVLJsonHelper = {
 
     val manifest: work.lithos.plasma.collections.Manifest =
       map.getManifest(255)
@@ -18,6 +25,9 @@ object avlUtils {
       manifest.toHexStrings._2
 
     new AVLJsonHelper(
+      tokenId,
+      index,
+      name,
       manifestHex,
       manifestDigestHex,
       manifestSubTreeHex.toArray

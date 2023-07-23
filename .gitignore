@@ -34,3 +34,5 @@ project/metals.sbt
 # vs code
 .vscode
 serviceOwner.json
+ErgonamesPlasmaDB
+avl.json

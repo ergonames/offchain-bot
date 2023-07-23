@@ -10,7 +10,7 @@ import java.nio.charset.StandardCharsets
 class OutBoxes(ctx: BlockchainContext) {
 
   private val minAmount = 1000000L
-  private val txBuilder = this.ctx.newTxBuilder()
+  final val txBuilder = this.ctx.newTxBuilder()
 
   def pictureNFTHelper(
       inputBox: InputBox,

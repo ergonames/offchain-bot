@@ -5,7 +5,7 @@ import enumeratum._
 import scala.collection.immutable
 import scala.io.Source
 
-sealed trait YourProjectContracts extends EnumEntry {
+sealed trait ErgoNamesContracts extends EnumEntry {
   // Top Folder
   val domain: String = ""
   // Sub Folder
@@ -52,23 +52,22 @@ sealed trait YourProjectContracts extends EnumEntry {
   }
 }
 
-object YourProjectContracts extends Enum[YourProjectContracts] {
-  val values: immutable.IndexedSeq[YourProjectContracts] = findValues
-  case object StateContract extends NFTBoxGuardScriptContract
-  case object IssuerContract extends NFTBoxGuardScriptContract
-  case object CollectionIssuer extends NFTBoxGuardScriptContract
-  case object CollectionIssuance extends NFTBoxGuardScriptContract
-  case object SingletonIssuer extends NFTBoxGuardScriptContract
-  case object SingletonIssuance extends NFTBoxGuardScriptContract
-  case object AVLdebug extends NFTBoxGuardScriptContract
+object ErgoNamesContracts extends Enum[ErgoNamesContracts] {
+  val values: immutable.IndexedSeq[ErgoNamesContracts] = findValues
+  case object MintContract extends TokenBoxGuardScriptContract
   case object ProxyContract extends ProxyContractBoxGuardScriptContract
+  case object CommitmentContract extends CommitmentContractBoxGuardScriptContract
 }
 
-sealed trait NFTContract extends YourProjectContracts {
+sealed trait TokenContract extends ErgoNamesContracts {
   override val domain: String = "ErgoNames"
 }
 
-sealed trait ProxyContract extends YourProjectContracts {
+sealed trait ProxyContract extends ErgoNamesContracts {
+  override val domain: String = "ErgoNames"
+}
+
+sealed trait CommitmentContract extends ErgoNamesContracts {
   override val domain: String = "ErgoNames"
 }
 
@@ -76,19 +75,23 @@ sealed trait ProxyContract extends YourProjectContracts {
 
 //<editor-fold desc="Detailed Contract Types">
 /** // ===== Detailed Level Contracts =====
-  */
-sealed trait NFTBoxGuardScriptContract extends NFTContract {
+ */
+sealed trait TokenBoxGuardScriptContract extends TokenContract {
   override val contractType: ContractType = ContractTypes.BoxGuardScript
 }
 
 sealed trait ProxyContractBoxGuardScriptContract extends ProxyContract {
   override val contractType: ContractType = ContractTypes.ProxyContract
 }
+
+sealed trait CommitmentContractBoxGuardScriptContract extends ProxyContract {
+  override val contractType: ContractType = ContractTypes.CommitmentContract
+}
 //</editor-fold>
 
 //<editor-fold desc="Contract Type Enum">
 /** Describes the different contract types as Enums
-  */
+ */
 sealed trait ContractType extends EnumEntry { val plural: String }
 
 object ContractTypes extends Enum[ContractType] {
@@ -98,9 +101,14 @@ object ContractTypes extends Enum[ContractType] {
     override val plural = "ProxyContracts"
   }
 
+  case object CommitmentContract extends ContractType {
+    override val plural = "ProxyContracts"
+  }
+
   case object BoxGuardScript extends ContractType {
     override val plural = "BoxGuardScripts"
   }
+
   case object None extends ContractType { override val plural = "" }
 }
 

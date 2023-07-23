@@ -1,50 +1,60 @@
 {
     // ===== Contract Description ===== //
-    // Name: NFT Buyer Proxy Contract
-    // Description: This contract is a proxy contract and ensures funds are used for NFTs or are refunded.
+    // Name: ErgoNames Proxy Contract
+    // Description: This contract is a proxy contract and ensures funds are used properly
     // Version: 1.0.0
-    // Author: mgpai22@github.com
+    // Author: zackbalbin@github.com
+    // Auditor: mgpai22@github.com
 
     // ===== Box Registers ===== //
-    // R4: SigmaProp => Buyer SigmaProp
-    // R5: Coll[Byte] => State Box Singleton
+    // R4: Coll[Byte] => name to register
+    // R5: SigmaProp => receiver sigmaProp
+    // R6: Coll[Byte] => commitment secret
 
     // ===== Compile Time Constants ===== //
-    // _minerFee: Long
+    // _singletonToken: Coll[Byte]
+    // _minerFee: Long //miner fee in nano ergs
 
     // ===== Context Extension Variables ===== //
     // None
 
+
+
     val isRefund: Boolean = (INPUTS.size == 1)
-    val buyerPK: SigmaProp = SELF.R4[SigmaProp].get
-    val stateBoxSingleton: Coll[Byte] = SELF.R5[Coll[Byte]].get
+    val buyerPK: SigmaProp = SELF.R5[SigmaProp].get
 
     if (!isRefund) {
 
-        val validNFTSaleTx: Boolean = {
+        val validTx: Boolean = {
 
             // inputs
-            val stateBoxIN: Box = INPUTS(0)
+            val registryInputBox = INPUTS(0)
 
             // outputs
-            val issuerBoxOUT: Box = OUTPUTS(0)
+            val tokenReceiverBox = OUTPUTS(0)
 
-            val validStateBox: Boolean = {
-                (stateBoxIN.tokens(0)._1 == stateBoxSingleton) // check that the state box has the right singleton value
+
+            val validRecipient: Boolean = {
+                tokenReceiverBox.propositionBytes == buyerPK.propBytes
             }
 
-            val validIssuerBox: Boolean = {
-                (issuerBoxOUT.R9[(SigmaProp, Long)].get._1 == buyerPK) // check that issuer box has the buyer sigmaprop
+            val validAmount: Boolean = {
+                tokenReceiverBox.value == INPUTS(0).value
+            }
+
+            val validRegistryBox: Boolean = {
+                (registryInputBox.tokens(0)._1 == _singletonToken)
             }
 
             allOf(Coll(
-                validStateBox,
-                validIssuerBox
+                validAmount,
+                validRecipient,
+                validRegistryBox
             ))
 
         }
 
-        sigmaProp(validNFTSaleTx)
+        sigmaProp(validTx)
 
     } else {
 

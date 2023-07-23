@@ -67,6 +67,24 @@ class TransactionHelper(
     this.ctx.sendTransaction(signedTransaction)
   }
 
+  def simpleSend(
+      receiver: List[Address],
+      amountList: List[Long],
+      inputBox: Seq[InputBox] = null,
+      sender: Address = this.senderAddress
+  ): SignedTransaction = {
+    var inBox: Seq[InputBox] = null;
+    if (inputBox == null) {
+      inBox = new InputBoxes(ctx).getInputs(amountList, sender)
+    } else {
+      inBox = inputBox
+    }
+    var unsignedTransaction: UnsignedTransaction = null
+    val outBox =
+      new OutBoxes(this.ctx).simpleOutBox(receiver.head, amountList.head)
+    this.signTransaction(unsignedTransaction)
+  }
+
   def createToken(
       receiver: Address,
       amountList: Seq[Long],
