@@ -65,11 +65,11 @@ object YourProjectContracts extends Enum[YourProjectContracts] {
 }
 
 sealed trait NFTContract extends YourProjectContracts {
-  override val domain: String = "YourProject"
+  override val domain: String = "ErgoNames"
 }
 
 sealed trait ProxyContract extends YourProjectContracts {
-  override val domain: String = "YourProject"
+  override val domain: String = "ErgoNames"
 }
 
 //</editor-fold>
