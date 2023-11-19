@@ -45,6 +45,7 @@ import scorex.crypto.encode.Base64
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.db.LDBVersionedStore
 import utils.RegistrySync.syncRegistry
+import utils.InputBoxes.getBoxById
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -54,6 +55,7 @@ import scala.collection.JavaConverters._
 import scala.collection.convert.ImplicitConversions.`collection asJava`
 import scala.collection.mutable.ListBuffer
 import scala.collection.mutable
+import utils.InputBoxes
 
 class akkaFunctions {
 
@@ -160,8 +162,17 @@ class akkaFunctions {
     var lastErgoName: Array[Byte] = "".getBytes(StandardCharsets.UTF_8)
 
     boxes.foreach(box => {
+      val boxR4 = box.getRegisters
+        .get(0)
+        .getValue
+        .asInstanceOf[Coll[Byte]]
+        .toArray
+
+      val commitmentBoxId = boxR4.toString()
+      val commitmentBox = getBoxById(commitmentBoxId)
+
       val signedTx =
-        txBuilderUtil.mintErgoNameToken(box, registerBox, tokenMap = tokenMap)
+        txBuilderUtil.mintErgoNameToken(box, registerBox, commitmentBox, tokenMap = tokenMap)
       val hash = txHelper.sendTx(signedTx)
       registerBox = signedTx.getOutputsToSpend.get(1)
       val registerBoxR5 = registerBox.getRegisters

@@ -56,6 +56,7 @@ object ErgoNamesContracts extends Enum[ErgoNamesContracts] {
   val values: immutable.IndexedSeq[ErgoNamesContracts] = findValues
   case object MintContract extends TokenBoxGuardScriptContract
   case object ProxyContract extends ProxyContractBoxGuardScriptContract
+  case object CommitmentContract extends CommitmentContractBoxGuardScriptContract
 }
 
 sealed trait TokenContract extends ErgoNamesContracts {
@@ -63,6 +64,10 @@ sealed trait TokenContract extends ErgoNamesContracts {
 }
 
 sealed trait ProxyContract extends ErgoNamesContracts {
+  override val domain: String = "ErgoNames"
+}
+
+sealed trait CommitmentContract extends ErgoNamesContracts {
   override val domain: String = "ErgoNames"
 }
 
@@ -78,6 +83,10 @@ sealed trait TokenBoxGuardScriptContract extends TokenContract {
 sealed trait ProxyContractBoxGuardScriptContract extends ProxyContract {
   override val contractType: ContractType = ContractTypes.ProxyContract
 }
+
+sealed trait CommitmentContractBoxGuardScriptContract extends ProxyContract {
+  override val contractType: ContractType = ContractTypes.CommitmentContract
+}
 //</editor-fold>
 
 //<editor-fold desc="Contract Type Enum">
@@ -92,9 +101,14 @@ object ContractTypes extends Enum[ContractType] {
     override val plural = "ProxyContracts"
   }
 
+  case object CommitmentContract extends ContractType {
+    override val plural = "ProxyContracts"
+  }
+
   case object BoxGuardScript extends ContractType {
     override val plural = "BoxGuardScripts"
   }
+
   case object None extends ContractType { override val plural = "" }
 }
 

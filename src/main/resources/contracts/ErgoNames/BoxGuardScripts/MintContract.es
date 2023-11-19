@@ -6,8 +6,11 @@
     // Author: zackbalbin@github.com
     // Auditor: mgpai22@github.com
 
-    // ===== Box Registers ===== //
+    // ===== AVL Box Registers ===== //
     // R4: AvlTree
+
+    // ===== Commitment Box Registers ===== //
+    // R4: Commitment Hash
 
     // ===== Compile Time Constants ===== //
     // _singletonToken: Coll[Byte]
@@ -18,6 +21,7 @@
 
     val registryInputBox = SELF
     val userInputBox = INPUTS(1) // proxy input
+    val commitmentBox = INPUTS(2) // commitment input
 
     val registry = registryInputBox.R4[AvlTree].get
 
@@ -37,6 +41,9 @@
     val currentIndex = registryInputBox.R5[(Coll[Byte], Long)].get._2
     val newIndex = updatedRegistryBox.R5[(Coll[Byte], Long)].get._2
     val newErgoNameTokenInRegistry = updatedRegistryBox.R5[(Coll[Byte], Long)].get._1
+
+    val minCommitmentBoxAge = 3
+    val maxCommitmentBoxAge = 30
 
     val mintNewErgoName = {
         val validToken = newErgoNameToken == (tokenIdToRegister, 1L)
@@ -72,12 +79,33 @@
          ))
     }
 
+    val validCommitmentRequirements = {
+        val commitAge = HEIGHT - commitmentBox.creationInfo._1
+        val validCommitmentAge = commitAge >= minCommitmentBoxAge && commitAge <= maxCommitmentBoxAge
+
+        val commitmentSecret = userInputBox.R6[Coll[Byte]].get
+        val expectedCommitmentHash = commitmentBox.R4[Coll[Byte]].get
+        val calculatedHash = blake2b256(
+            commitmentSecret ++ 
+            receiverAddress.propBytes ++
+            nameToRegister
+        )
+
+        val validCommitment = calculatedHash == expectedCommitmentHash
+
+        allOf(Coll(
+            validCommitmentAge,
+            validCommitment
+        )) 
+    }
+
     val validRegistration: Boolean = {
 
          allOf(Coll(
             mintNewErgoName,
             updateRegistry,
-            transferToken
+            transferToken,
+            validCommitmentRequirements
          ))
     }
 
