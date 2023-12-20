@@ -99,13 +99,21 @@
         ))
     }
 
+    // TODO - create subname tree
+    // need address of subname contract
+    // will be easier to index if the box is created at mint time (easier to know which one is real and which are frauds)
+    val validSubnameTreeCreation = {
+        1==1
+    }
+
     val validRegistration: Boolean = {
 
          allOf(Coll(
             mintNewErgoName,
             updateRegistry,
             transferToken,
-            validCommitmentRequirements
+            validCommitmentRequirements,
+            validSubnameTreeCreation
          ))
     }
 
