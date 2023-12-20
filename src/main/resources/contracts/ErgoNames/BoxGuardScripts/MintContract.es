@@ -35,6 +35,7 @@
 
     val mintBox = OUTPUTS(0)
     val updatedRegistryBox = OUTPUTS(1)
+    val subnameRegistryBox = OUTPUTS(2)
 
     val newErgoNameToken = mintBox.tokens(0)
 
@@ -99,11 +100,16 @@
         )) 
     }
 
-    // TODO - create subname tree
-    // need address of subname contract
-    // will be easier to index if the box is created at mint time (easier to know which one is real and which are frauds)
     val validSubnameTreeCreation = {
-        1==1
+        val validSubnameAddress = subnameRegistryBox.propositionBytes == _subnameContractPropBytes
+        val validSubnameRegistryCreation = subnameRegistryBox.R4[AvlTree].isDefined
+        val validParentIdentifier = subnameRegistryBox.R5[Coll[Byte]] == tokenIdToRegister
+
+        allOf(Coll(
+            validSubnameAddress,
+            validSubnameRegistryCreation,
+            validParentIdentifier
+        ))
     }
 
     val validRegistration: Boolean = {
