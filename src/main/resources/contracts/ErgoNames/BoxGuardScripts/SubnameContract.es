@@ -5,9 +5,9 @@
 {
     val registryInputBox = SELF
     val userInputBox = INPUTS(1)
-    val ergonamesRegistryBox = CONTEXT.dataInputs(0)
 
-    val ergonamesRegistry = ergonamesRegistryBox.R4[AvlTree].get
+    val parentErgoname = userInputBox.tokens(0)
+    val parentErgonameId = parentErgoname._1
     val subnameRegistry = registryInputBox.R4[AvlTree].get
 
     val updatedRegistryBox = OUTPUTS(0)
@@ -20,11 +20,13 @@
         val updatedRegistry = subnameRegistry.insert(Coll((subnameToRegister, subnameTokenId)), proof).get
         val validRegistyInsertion = updatedRegistryBox.R4[AvlTree].get.digest == updatedRegistry.digest
         val validScript = updatedRegistryBox.propositionBytes == registryInputBox.propositionBytes
+        val validParentErgoname = parentErgonameId == registryInputBox.R5[Coll[Byte]].get
         val validIdentifier = updatedRegistryBox.R5[Coll[Byte]].get == registryInputBox.R5[Coll[Byte]].get
 
         allOf(Coll(
             validRegistyInsertion,
             validScript,
+            validParentErgoname,
             validIdentifier
         ))
     }
@@ -37,11 +39,13 @@
         val updatedRegistry = subnameRegistry.update(Coll((subnameToUpdate, subnameUpdatedTokenId)), proof).get
         val validRegistryUpdate = updatedRegistryBox.R4[AvlTree].get.digest == updatedRegistry.digest
         val validScript = updatedRegistryBox.propositionBytes == registryInputBox.propositionBytes
+        val validParentErgoname = parentErgonameId == registryInputBox.R5[Coll[Byte]].get
         val validIdentifier = updatedRegistryBox.R5[Coll[Byte]].get == registryInputBox.R5[Coll[Byte]].get
 
         allOf(Coll(
             validRegistryUpdate,
             validScript,
+            validParentErgoname,
             validIdentifier
         ))
     }
@@ -53,11 +57,13 @@
         val updatedRegistry = subnameRegistry.remove(Coll(subnameToDelete), proof)
         val validRegistryUpdate = updatedRegistryBox.R4[AvlTree].get.digest == updatedRegistry.get.digest
         val validScript = updatedRegistryBox.propositionBytes == registryInputBox.propositionBytes
+        val validParentErgoname = parentErgonameId == registryInputBox.R5[Coll[Byte]].get
         val validIdentifier = updatedRegistryBox.R5[Coll[Byte]].get == registryInputBox.R5[Coll[Byte]].get
 
         allOf(Coll(
             validRegistryUpdate,
             validScript,
+            validParentErgoname,
             validIdentifier
         ))
     }
