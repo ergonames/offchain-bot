@@ -1,8 +1,21 @@
-// Each box represents an AVLTree Registry for parent ergoname
-// R4 -> AVL Tree Digest
-// R5 -> TokenId of parent ergoname
-
 {
+    // ===== Contract Description ===== //
+    // Name: ErgoNames Subnames Contract
+    // Description: This contract allows for recursive subnames
+    // Version: 1.0.0
+    // Author: zackbalbin@github.com
+    // Auditor: mgpai22@github.com
+
+    // ===== SELF Registers ===== //
+    // R4: AvlTree
+    // R5: Parent Ergoname Id
+
+    // ===== Compile Time Constants ===== //
+    // None
+
+    // ===== Context Extension Variables ===== //
+    // None
+
     val registryInputBox = SELF
     val userInputBox = INPUTS(1)
 
@@ -16,7 +29,7 @@
         val subnameToRegister = userInputBox.R4[Coll[Byte]].get
         val subnameTokenId = userInputBox.R5[Coll[Byte]].get
         val proof = userInputBox.R6[Coll[Byte]].get
-        
+
         val updatedRegistry = subnameRegistry.insert(Coll((subnameToRegister, subnameTokenId)), proof).get
         val validRegistyInsertion = updatedRegistryBox.R4[AvlTree].get.digest == updatedRegistry.digest
         val validScript = updatedRegistryBox.propositionBytes == registryInputBox.propositionBytes
@@ -49,7 +62,7 @@
             validIdentifier
         ))
     }
-    
+
     val deleteRecordFromSubnameTree = {
         val subnameToDelete = userInputBox.R4[Coll[Byte]].get
         val proof = userInputBox.R5[Coll[Byte]].get
