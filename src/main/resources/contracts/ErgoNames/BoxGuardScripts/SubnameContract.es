@@ -44,25 +44,6 @@
         ))
     }
 
-    val editRecordInSubnameTree = {
-        val subnameToUpdate = userInputBox.R4[Coll[Byte]].get
-        val subnameUpdatedTokenId = userInputBox.R5[Coll[Byte]].get
-        val proof = userInputBox.R6[Coll[Byte]].get
-
-        val updatedRegistry = subnameRegistry.update(Coll((subnameToUpdate, subnameUpdatedTokenId)), proof).get
-        val validRegistryUpdate = updatedRegistryBox.R4[AvlTree].get.digest == updatedRegistry.digest
-        val validScript = updatedRegistryBox.propositionBytes == registryInputBox.propositionBytes
-        val validParentErgoname = parentErgonameId == registryInputBox.R5[Coll[Byte]].get
-        val validIdentifier = updatedRegistryBox.R5[Coll[Byte]].get == registryInputBox.R5[Coll[Byte]].get
-
-        allOf(Coll(
-            validRegistryUpdate,
-            validScript,
-            validParentErgoname,
-            validIdentifier
-        ))
-    }
-
     val deleteRecordFromSubnameTree = {
         val subnameToDelete = userInputBox.R4[Coll[Byte]].get
         val proof = userInputBox.R5[Coll[Byte]].get
@@ -84,7 +65,6 @@
     val validOperation = {
         anyOf(Coll(
             insertRecordIntoSubnameTree,
-            editRecordInSubnameTree,
             deleteRecordFromSubnameTree
         ))
     }
