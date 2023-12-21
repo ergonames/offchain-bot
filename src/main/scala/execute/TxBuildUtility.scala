@@ -101,7 +101,8 @@ class TxBuildUtility(
 
     val ergoNamesMintContract = compiler.compileMintContract(
       ErgoNamesContracts.MintContract.contractScript,
-      registerBoxInput.getTokens.get(0)
+      registerBoxInput.getTokens.get(0),
+      null
     )
 
     val recipientOutBox =

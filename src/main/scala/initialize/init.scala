@@ -60,7 +60,8 @@ object init extends App {
 
   private val mintContract = compiler.compileMintContract(
     ErgoNamesContracts.MintContract.contractScript,
-    new ErgoToken(singletonTokenID, 1)
+    new ErgoToken(singletonTokenID, 1),
+    null
   )
   private val proxyContract = compiler.compileProxyContract(
     ErgoNamesContracts.ProxyContract.contractScript,
@@ -119,7 +120,8 @@ object getContracts extends App {
 
   private val mintContract = compiler.compileMintContract(
     ErgoNamesContracts.MintContract.contractScript,
-    new ErgoToken(singletonTokenID, 1)
+    new ErgoToken(singletonTokenID, 1),
+    null
   )
 
   private val proxyContract = compiler.compileProxyContract(
