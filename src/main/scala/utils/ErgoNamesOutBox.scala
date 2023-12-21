@@ -102,6 +102,24 @@ class ErgoNamesOutBox(ctx: BlockchainContext) extends OutBoxes(ctx) {
       .build()
   }
 
+  def ergoNamesSubNamesBoxForTesting[K, V](
+      contract: ErgoContract,
+      tokenMap: PlasmaMap[K, V],
+      recipientErgoNameToken: ErgoToken,
+      amount: Long = minAmount
+  ): OutBox = {
+
+    this.txBuilder
+      .outBoxBuilder()
+      .value(amount)
+      .contract(contract)
+      .registers(
+        tokenMap.ergoValue,
+        ErgoValue.of(recipientErgoNameToken.getId.getBytes)
+      )
+      .build()
+  }
+
   def proxyBox(
       proxyContract: ErgoContract,
       nameToRegister: String,

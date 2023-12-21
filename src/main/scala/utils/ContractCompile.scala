@@ -32,13 +32,27 @@ class ContractCompile(ctx: BlockchainContext) {
 
   def compileMintContract(
       contract: String,
-      singleton: ErgoToken
+      singleton: ErgoToken,
+      subnameContract: ErgoContract
   ): ErgoContract = {
     this.ctx.compileContract(
       ConstantsBuilder
         .create()
         .item("_singletonToken", singleton.getId.getBytes)
+        .item(
+          "_subnameContractBytes",
+          subnameContract.toAddress.asP2S().scriptBytes
+        )
         .build(),
+      contract
+    )
+  }
+
+  def compileSubnameContract(
+      contract: String
+  ): ErgoContract = {
+    this.ctx.compileContract(
+      ConstantsBuilder.empty(),
       contract
     )
   }

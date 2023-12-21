@@ -76,9 +76,14 @@ class ErgoNamesSpec
 
   private val minerFee: Long = 1000000L
 
+  private val subnameContract = compiler.compileSubnameContract(
+    ErgoNamesContracts.SubnameContract.contractScript
+  )
+
   private val mintContract = compiler.compileMintContract(
     ErgoNamesContracts.MintContract.contractScript,
-    singletonToken
+    singletonToken,
+    subnameContract
   )
 
   private val proxyContract = compiler.compileProxyContract(
@@ -189,9 +194,15 @@ class ErgoNamesSpec
         1L
       )
 
+    val subnamesOutBox = outBoxObj.ergoNamesSubNamesBoxForTesting(
+      subnameContract,
+      emptyMap,
+      ergoNameRecipientToken
+    )
+
     val unsignedTx: UnsignedTransaction = txHelper.buildUnsignedTransaction(
       inputs = Seq(registerBoxInput, proxyBox, commitmentBox),
-      outputs = Seq(recipientOutBox, registryOutBox)
+      outputs = Seq(recipientOutBox, registryOutBox, subnamesOutBox)
     )
 
     val signedTx = txHelper.signTransaction(unsignedTx)
