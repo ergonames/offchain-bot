@@ -55,6 +55,7 @@ sealed trait ErgoNamesContracts extends EnumEntry {
 object ErgoNamesContracts extends Enum[ErgoNamesContracts] {
   val values: immutable.IndexedSeq[ErgoNamesContracts] = findValues
   case object MintContract extends TokenBoxGuardScriptContract
+  case object SubnameContract extends TokenBoxGuardScriptContract
   case object ProxyContract extends ProxyContractBoxGuardScriptContract
   case object CommitmentContract extends CommitmentContractBoxGuardScriptContract
 }
