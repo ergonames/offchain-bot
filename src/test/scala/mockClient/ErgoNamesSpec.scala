@@ -44,7 +44,7 @@ class ErgoNamesSpec
   val apiUrl = "https://ergo-explorer.anetabtc.io"
 
   val testnetNodeUrl = "http://192.168.50.14:9052"
-  val testnetApiUrl = "https://tn-ergoexplorer.anetabtc.io"
+  val testnetApiUrl = "https://api-testnet.ergoplatform.com"
 
   val mainnetExp = new explorerApi(apiUrl, nodeUrl)
   val testnetExp = new explorerApi(testnetApiUrl, testnetNodeUrl)
