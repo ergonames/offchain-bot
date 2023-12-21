@@ -14,6 +14,7 @@
 
     // ===== Compile Time Constants ===== //
     // _singletonToken: Coll[Byte]
+    // _subnameContractBytes: Coll[Byte]
 
     // ===== Context Extension Variables ===== //
     // ergonameHash: Coll[Byte] - hash of the name to register
@@ -88,7 +89,7 @@
         val expectedCommitmentHash = commitmentBox.R4[Coll[Byte]].get
         val calculatedHash = blake2b256(
             commitmentSecret ++
-            receiverAddress.propBytes ++
+            receiverAddress.propBytes ++ // attacker cannot replicate this, making frontrunning impossible :)
             nameToRegister
         )
 
@@ -101,9 +102,9 @@
     }
 
     val validSubnameTreeCreation = {
-        val validSubnameAddress = subnameRegistryBox.propositionBytes == _subnameContractPropBytes
+        val validSubnameAddress = subnameRegistryBox.propositionBytes == _subnameContractBytes
         val validSubnameRegistryCreation = subnameRegistryBox.R4[AvlTree].isDefined
-        val validParentIdentifier = subnameRegistryBox.R5[Coll[Byte]] == tokenIdToRegister
+        val validParentIdentifier = subnameRegistryBox.R5[Coll[Byte]].get == tokenIdToRegister
 
         allOf(Coll(
             validSubnameAddress,
