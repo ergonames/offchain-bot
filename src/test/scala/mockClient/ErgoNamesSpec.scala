@@ -102,6 +102,7 @@ class ErgoNamesSpec
     println("Mint Contract: " + mintContract.toAddress)
     println("Proxy Contract: " + proxyContract.toAddress)
     println("Commitment Contract: " + commitmentContract.toAddress)
+    println("Subnames Contract: " + subnameContract.toAddress)
   }
 
   "endToEndTest" should "work" in {
