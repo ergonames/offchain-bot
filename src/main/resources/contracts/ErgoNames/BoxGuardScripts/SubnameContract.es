@@ -3,185 +3,171 @@
     // Name: ErgoNames Subnames Contract
     // Description: This contract allows for recursive subnames
     // Version: 1.0.0
-    // Author: zackbalbin@github.com
+    // Author: zackbalbin@github.com, mgpai22@github.com
     // Auditor: mgpai22@github.com
 
     // ===== SELF Registers ===== //
     // R4: AvlTree
     // R5: Parent Ergoname Id
 
-    // ==== User Input Box Registers For Mint //
-    // R4: Parent Type
-    // R5: Subname To Register
-    // R6: Operation Proof
-    // R7: Contains Proof
-    // R8?: Parent AVL AvlTree
-
-    // ==== User Input Box Tokens //
-    // 0: Parent Token
-
     // ===== Compile Time Constants ===== //
     // None
 
     // ===== Context Extension Variables ===== //
-    // None
-
-    val ergonameParent = 0.toByte
-    val subnameParent = 1.toByte
+    // subnameToRegisterHash or subnameToDeleteHash: Coll[Byte] - hash of the name to register/delete
+    // insertionProof or deletionProof: Coll[Byte] - proof of insertion/deletion
+    // existenceProof? : Coll[Byte] - proof of subname to delete existence
 
     val registryInputBox = SELF
     val userInputBox = INPUTS(1)
 
-    val ergonamesRegistryBox = CONTEXT.dataInputs(0)
+    val updatedSubnameRegistryBox = OUTPUTS(0)
 
-    val parentType = userInputBox.R4[Byte].get
     val subnameRegistry = registryInputBox.R4[AvlTree].get
+    val subnameRegistryOwner = registryInputBox.R5[Coll[Byte]].get
 
-    val ergonamesRegistry = ergonamesRegistryBox.R4[AvlTree].get
+    val isMintSubname = OUTPUTS.size > 3
 
-    val parentErgoname = userInputBox.tokens(0)
-    val parentErgonameId = parentErgoname._1
 
-    val createNewSubname = {
-        val subnameToRegister = userInputBox.R5[Coll[Byte]].get
-        val insertionProof = userInputBox.R6[Coll[Byte]].get
-        val ergonameRegistryContainsProof = userInputBox.R7[Coll[Byte]].get
+    val validRecreation = {
 
-        val subnameTokenId = INPUTS(0).id
+        val validScript = updatedSubnameRegistryBox.propositionBytes == registryInputBox.propositionBytes
+        val validSingletonTransfer = (updatedSubnameRegistryBox.tokens(0) == (registryInputBox.tokens(0)._1, 1L))
+        val validRegisters = subnameRegistryOwner == updatedSubnameRegistryBox.R5[Coll[Byte]].get
 
-        val userOutputBox = OUTPUTS(0)
-        val updatedSubnameRegistryBox = OUTPUTS(1)
-
-        val subnameTokenToMint = userOutputBox.tokens(0)
-        
-        val updatedRegistry = updatedSubnameRegistryBox.R4[AvlTree].get
-
-        if (parentType == ergonameParent) {
-            val correctAvlTreeInsertion = {
-                val treeInsertion = subnameRegistry.insert(Coll((subnameToRegister, subnameTokenId)), insertionProof).get
-
-                val validInsertion = updatedSubnameRegistryBox.R4[AvlTree].get.digest == treeInsertion.digest
-                val validScript = updatedSubnameRegistryBox.propositionBytes == registryInputBox.propositionBytes
-
-                allOf(Coll(
-                    validInsertion,
-                    validScript
-                ))
-            }
-
-            val correctSubnameTokenMint = {
-                val validTokenId = subnameTokenToMint._1 == SELF.id
-                val validTokenAmount = subnameTokenToMint._2 == 1L
-
-                allOf(Coll(
-                    validTokenId,
-                    validTokenAmount
-                ))
-            }
-
-            val mainErgonameInRegistery = ergonamesRegistry.contains(parentErgonameId, ergonameRegistryContainsProof)
-
-            allOf(Coll(
-                correctAvlTreeInsertion,
-                correctSubnameTokenMint,
-                mainErgonameInRegistery
-            ))
-        } else if (parentType == subnameParent) {
-            val parentSubnameTree = userInputBox.R8[AvlTree].get
-            val correctAvlTreeInsertion = {
-                val treeInsertion = parentSubnameTree.insert(Coll((subnameToRegister, subnameTokenId)), insertionProof).get
-
-                val validInsertion = updatedSubnameRegistryBox.R4[AvlTree].get.digest == treeInsertion.digest
-                val validScript = updatedSubnameRegistryBox.propositionBytes == registryInputBox.propositionBytes
-
-                allOf(Coll(
-                    validInsertion,
-                    validScript
-                ))
-            }
-
-            val correctSubnameTokenMint = {
-                val validTokenId = subnameTokenToMint._1 == SELF.id
-                val validTokenAmount = subnameTokenToMint._2 == 1L
-
-                allOf(Coll(
-                    validTokenId,
-                    validTokenAmount
-                ))
-            }
-
-            val mainErgonameInRegistery = ergonamesRegistry.contains(parentErgonameId, ergonameRegistryContainsProof)
-
-            allOf(Coll(
-                correctAvlTreeInsertion,
-                correctSubnameTokenMint,
-                mainErgonameInRegistery
-            ))
-        } else { false }
-    }
-
-    val deleteSubname = {
-        val subnameToRegister = userInputBox.R5[Coll[Byte]].get
-        val insertionProof = userInputBox.R6[Coll[Byte]].get
-        val ergonameRegistryContainsProof = userInputBox.R7[Coll[Byte]].get
-
-        val subnameTokenId = INPUTS(0).id
-
-        val userOutputBox = OUTPUTS(0)
-        val updatedSubnameRegistryBox = OUTPUTS(1)
-
-        val subnameTokenToMint = userOutputBox.tokens(0)
-        
-        val updatedRegistry = updatedSubnameRegistryBox.R4[AvlTree].get
-
-        if (parentType == ergonameParent) {
-            val correctAvlTreeDeletion = {
-                val treeInsertion = subnameRegistry.remove(Coll((subnameToRegister)), insertionProof).get
-
-                val validDeletion = updatedSubnameRegistryBox.R4[AvlTree].get.digest == treeInsertion.digest
-                val validScript = updatedSubnameRegistryBox.propositionBytes == registryInputBox.propositionBytes
-
-                allOf(Coll(
-                    validDeletion,
-                    validScript
-                ))
-            }
-
-            val mainErgonameInRegistery = ergonamesRegistry.contains(parentErgonameId, ergonameRegistryContainsProof)
-
-            allOf(Coll(
-                correctAvlTreeDeletion,
-                mainErgonameInRegistery
-            ))
-        } else if (parentType == subnameParent) {
-            val parentSubnameTree = userInputBox.R8[AvlTree].get
-            val correctAvlTreeDeletion = {
-                val treeInsertion = parentSubnameTree.remove(Coll((subnameToRegister)), insertionProof).get
-
-                val validDeletion = updatedSubnameRegistryBox.R4[AvlTree].get.digest == treeInsertion.digest
-                val validScript = updatedSubnameRegistryBox.propositionBytes == registryInputBox.propositionBytes
-
-                allOf(Coll(
-                    validDeletion,
-                    validScript
-                ))
-            }
-
-            val mainErgonameInRegistery = ergonamesRegistry.contains(parentErgonameId, ergonameRegistryContainsProof)
-
-            allOf(Coll(
-                correctAvlTreeDeletion,
-                mainErgonameInRegistery
-            ))
-        } else { false }
-    }
-
-    val validOperation = {
-        anyOf(Coll(
-            createNewSubname,
-            deleteSubname
+        allOf(Coll(
+            validScript,
+            validSingletonTransfer,
+            validRegisters
         ))
     }
 
-    sigmaProp(validOperation)
+    if (isMintSubname) {
+
+        val mintSubname = {
+
+            val parentErgoname = userInputBox.tokens(0)
+            val parentErgonameId = parentErgoname._1
+
+            val newSingleton = userInputBox.tokens(1)
+            val subnameToRegisterHash = getVar[Coll[Byte]](0).get
+            val insertionProof = getVar[Coll[Byte]](1).get
+
+            val subnameTokenId = registryInputBox.id
+
+            val newSubnameRegistryBox = OUTPUTS(1)
+            val userOutputBox = OUTPUTS(2)
+
+            val subnameTokenToMint = userOutputBox.tokens(0)
+
+            val updatedRegistry = updatedSubnameRegistryBox.R4[AvlTree].get
+
+            val correctAvlTreeInsertion = {
+                val treeInsertion = subnameRegistry.insert(Coll((subnameToRegisterHash, subnameTokenId)), insertionProof).get
+
+                val validInsertion = updatedSubnameRegistryBox.R4[AvlTree].get.digest == treeInsertion.digest
+
+                validInsertion
+            }
+
+            val correctSubnameTokenMint = {
+                val validTokenId = subnameTokenToMint._1 == subnameTokenId
+                val validTokenAmount = subnameTokenToMint._2 == 1L
+
+                allOf(Coll(
+                    validTokenId,
+                    validTokenAmount
+                ))
+            }
+
+            val newRegistryCreation = {
+                val validEmptyAVLTree = true // newSubnameRegistryBox.R4[AvlTree].get
+                val validSingletonTransfer = newSubnameRegistryBox.tokens(0) == newSingleton
+                val validOwner = newSubnameRegistryBox.R5[Coll[Byte]].get == subnameTokenId
+
+                allOf(Coll(
+                    validEmptyAVLTree,
+                    validSingletonTransfer,
+                    validOwner
+                ))
+            }
+
+            val hasPermission = parentErgonameId == subnameRegistryOwner
+
+
+            allOf(Coll(
+                correctAvlTreeInsertion,
+                correctSubnameTokenMint,
+                validRecreation,
+                newRegistryCreation,
+                hasPermission
+            ))
+        }
+
+        sigmaProp(mintSubname)
+    } else {
+
+        val deleteSubname = {
+
+            val subnameToDeleteHash = getVar[Coll[Byte]](0).get
+            val deletionProof = getVar[Coll[Byte]](1).get
+
+            val parentKillingChild = userInputBox.tokens(0)._1 == subnameRegistryOwner
+
+            val validDeletion = {
+
+                if (parentKillingChild) {
+
+                    val correctAvlTreeDeletion = {
+
+                        val deletion = subnameRegistry.remove(Coll((subnameToDeleteHash)), deletionProof).get
+                        val validRemoval = updatedSubnameRegistryBox.R4[AvlTree].get.digest == deletion.digest
+
+                        validRemoval
+                    }
+
+                    correctAvlTreeDeletion
+                } else {
+
+                    val existenceProof = getVar[Coll[Byte]](2).get
+
+                    val correctAvlTreeDeletion = {
+
+                        val tokenIdToDeleteFromTree = subnameRegistry.get(subnameToDeleteHash, existenceProof).get
+                        val deletion = subnameRegistry.remove(Coll((subnameToDeleteHash)), deletionProof).get
+
+                        val validToken = userInputBox.tokens(0)._1 == tokenIdToDeleteFromTree
+                        val validRemoval = updatedSubnameRegistryBox.R4[AvlTree].get.digest == deletion.digest
+
+                        allOf(Coll(
+                            validRemoval,
+                            validToken
+                        ))
+                    }
+
+                    val validTokenBurn = {
+
+                        val tokenIdToBurn = userInputBox.tokens(0)._1
+
+                        OUTPUTS.forall{ (output: Box) =>
+                           output.tokens.forall { (token: (Coll[Byte], Long)) =>  token._1 != tokenIdToBurn }
+                        }
+                    }
+
+                    allOf(Coll(
+                        correctAvlTreeDeletion,
+                        validTokenBurn
+                    ))
+                }
+
+            }
+
+            allOf(Coll(
+                validDeletion,
+                validRecreation
+            ))
+        }
+
+        sigmaProp(deleteSubname)
+    }
 }
