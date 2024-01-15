@@ -81,7 +81,8 @@
             }
 
             val newRegistryCreation = {
-                val validEmptyAVLTree = true // newSubnameRegistryBox.R4[AvlTree].get
+                val emptyDigest = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
+                val validEmptyAVLTree = newSubnameRegistryBox.R4[AvlTree].get.digest == emptyDigest
                 val validSingletonTransfer = newSubnameRegistryBox.tokens(0) == newSingleton
                 val validOwner = newSubnameRegistryBox.R5[Coll[Byte]].get == subnameTokenId
 
