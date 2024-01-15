@@ -56,6 +56,44 @@ class ErgoNamesOutBox(ctx: BlockchainContext) extends OutBoxes(ctx) {
       .build()
   }
 
+  def subnamesTokenOut(
+      receiver: Address,
+      parentErgoName: ErgoToken,
+      ergoNameToken: Eip4Token,
+      amount: Long = minAmount
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(amount)
+      .contract(
+        new ErgoTreeContract(
+          receiver.getErgoAddress.script,
+          this.ctx.getNetworkType
+        )
+      )
+      .mintToken(ergoNameToken)
+      .tokens(parentErgoName)
+      .build()
+  }
+
+  def subnamesDeletionTokenOut(
+      receiver: Address,
+      ergoName: ErgoToken,
+      amount: Long = minAmount
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(amount)
+      .contract(
+        new ErgoTreeContract(
+          receiver.getErgoAddress.script,
+          this.ctx.getNetworkType
+        )
+      )
+      .tokens(ergoName)
+      .build()
+  }
+
   def ergoNamesRegistryBox[K, V](
       contract: ErgoContract,
       singleton: ErgoToken,
@@ -90,6 +128,8 @@ class ErgoNamesOutBox(ctx: BlockchainContext) extends OutBoxes(ctx) {
 
     val t: (Coll[Byte], Long) =
       (Colls.fromArray(recipientErgoNameToken.getId.getBytes), index)
+
+    val x = Colls.fromArray(recipientErgoNameToken.getId.getBytes)
     this.txBuilder
       .outBoxBuilder()
       .value(amount)
@@ -106,6 +146,7 @@ class ErgoNamesOutBox(ctx: BlockchainContext) extends OutBoxes(ctx) {
       contract: ErgoContract,
       tokenMap: PlasmaMap[K, V],
       recipientErgoNameToken: ErgoToken,
+      singleton: ErgoToken,
       amount: Long = minAmount
   ): OutBox = {
 
@@ -117,6 +158,7 @@ class ErgoNamesOutBox(ctx: BlockchainContext) extends OutBoxes(ctx) {
         tokenMap.ergoValue,
         ErgoValue.of(recipientErgoNameToken.getId.getBytes)
       )
+      .tokens(singleton)
       .build()
   }
 
@@ -139,11 +181,67 @@ class ErgoNamesOutBox(ctx: BlockchainContext) extends OutBoxes(ctx) {
       .build()
   }
 
+  def subnamesUserBox(
+      user: Address,
+      parentErgoname: ErgoToken,
+      singleton: ErgoToken,
+      amount: Long = minAmount
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(amount)
+      .tokens(parentErgoname, singleton)
+      .contract(
+        new ErgoTreeContract(
+          user.getErgoAddress.script,
+          this.ctx.getNetworkType
+        )
+      )
+      .build()
+  }
+
+  def subnamesDeletionBox(
+      user: Address,
+      ergoname: ErgoToken,
+      amount: Long = minAmount
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(amount)
+      .tokens(ergoname)
+      .contract(
+        new ErgoTreeContract(
+          user.getErgoAddress.script,
+          this.ctx.getNetworkType
+        )
+      )
+      .build()
+  }
+
+  def subnamesDeletionUserBox(
+      user: Address,
+      ergoname: ErgoToken,
+      amount: Long = minAmount
+  ): OutBox = {
+    this.txBuilder
+      .outBoxBuilder()
+      .value(amount)
+      .tokens(ergoname)
+      .contract(
+        new ErgoTreeContract(
+          user.getErgoAddress.script,
+          this.ctx.getNetworkType
+        )
+      )
+      .build()
+  }
+
   def commitmentBox(
       commitmentContract: ErgoContract,
       commitmentHash: Array[Byte],
       buyerPk: Address,
       creationHeight: Int = this.ctx.getHeight,
+      singleton: ErgoToken,
       amount: Long = minAmount
   ): OutBox = {
     this.txBuilder
@@ -153,6 +251,7 @@ class ErgoNamesOutBox(ctx: BlockchainContext) extends OutBoxes(ctx) {
         ErgoValue.of(commitmentHash),
         ErgoValue.of(buyerPk.getPublicKey)
       )
+      .tokens(singleton)
       .contract(commitmentContract)
       .creationHeight(creationHeight)
       .build()
