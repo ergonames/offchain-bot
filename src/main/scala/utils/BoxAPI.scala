@@ -61,7 +61,7 @@ case class BoxJson(
     globalIndex: Int,
     creationHeight: Int,
     settlementHeight: Int,
-    ergoTree: String,
+    var ergoTree: String,
     ergoTreeConstants: String,
     ergoTreeScript: String,
     address: String,
@@ -273,6 +273,19 @@ class BoxAPI(apiUrl: String, nodeUrl: String) {
     }
 
     RawResponse(allBoxes, allBoxes.length)
+  }
+
+  def getBoxByIdFromApi(
+      boxId: String
+  ): BoxJson = {
+
+    val get = new HttpGet(
+      s"${apiUrl}/api/v1/boxes/${boxId}"
+    )
+
+    val response = client.execute(get)
+    val resp = EntityUtils.toString(response.getEntity)
+    gson.fromJson(resp, classOf[BoxJson])
   }
 
 // testnet mining address with plenty of utxos: mPdcmWTSJ6EJtnWk8LpK4ZXa7koomoiXgzZHGw8twRQ3U5W2npaixKAq6Fz5V5gfEhSXUBJ6YWMAu7pZ

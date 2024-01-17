@@ -45,7 +45,7 @@
     val newErgoNameTokenInRegistry = updatedRegistryBox.R5[(Coll[Byte], Long)].get._1
 
     val minCommitmentBoxAge = 3
-    val maxCommitmentBoxAge = 30
+    val maxCommitmentBoxAge = 300
 
     val mintNewErgoName = {
         val validToken = newErgoNameToken == (tokenIdToRegister, 1L)
@@ -102,8 +102,10 @@
     }
 
     val validSubnameTreeCreation = {
+
+        val emptyDigest = fromBase16("4ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900")
         val validSubnameAddress = subnameRegistryBox.propositionBytes == _subnameContractBytes
-        val validSubnameRegistryCreation = subnameRegistryBox.R4[AvlTree].isDefined
+        val validSubnameRegistryCreation = subnameRegistryBox.R4[AvlTree].get.digest == emptyDigest
         val validParentIdentifier = subnameRegistryBox.R5[Coll[Byte]].get == tokenIdToRegister
 
         allOf(Coll(

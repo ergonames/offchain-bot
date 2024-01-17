@@ -3,24 +3,20 @@ package initialize
 import AVL.ErgoName.ErgoNameHash
 import configs.{conf, serviceOwnerConf}
 import contracts.ErgoNamesContracts
-import execute.{Client, DefaultNodeInfo}
-import org.ergoplatform.ErgoBox
-import org.ergoplatform.ErgoBox.R5
-import org.ergoplatform.appkit.{InputBox, SignedTransaction}
+import execute.Client
+import org.ergoplatform.appkit.{InputBox, Parameters, SignedTransaction}
 import org.ergoplatform.sdk.{ErgoId, ErgoToken}
 import sigmastate.AvlTreeFlags
-import special.collection.Coll
 import utils.{
   ContractCompile,
   ErgoNamesOutBox,
-  OutBoxes,
+  InputBoxes,
   TransactionHelper,
   explorerApi
 }
 import work.lithos.plasma.PlasmaParameters
 import work.lithos.plasma.collections.PlasmaMap
 
-import java.nio.charset.StandardCharsets
 import java.util
 import scala.collection.mutable.ListBuffer
 
@@ -31,7 +27,6 @@ object init extends App {
   private val serviceFilePath = "serviceOwner.json"
   private val contractConfFilePath = "contracts.json"
   private lazy val serviceConf = serviceOwnerConf.read(serviceFilePath)
-  private lazy val contractsConf = conf.read(contractConfFilePath)
   private val exp = new explorerApi()
   private val walletMnemonic = serviceConf.txOperatorMnemonic
   private val walletMnemonicPw = serviceConf.txOperatorMnemonicPw
@@ -39,29 +34,29 @@ object init extends App {
     new TransactionHelper(this.ctx, walletMnemonic, walletMnemonicPw)
 
   private val compiler = new ContractCompile(ctx)
+  val inputBoxesObj = new InputBoxes(ctx)
 
-  private val genesisTX: SignedTransaction =
-    txHelper.simpleSend(
-      List(txHelper.senderAddress),
-      List(
-        20000000L
+  val genesisInput =
+    inputBoxesObj
+      .getBoxesById(
+        ""
       )
-    )
 
-  val genesisOutBox: InputBox = genesisTX.getOutputsToSpend.get(0)
   val inputBoxList = new ListBuffer[InputBox]()
-  inputBoxList.append(genesisOutBox)
-
-  println("Genesis: " + txHelper.sendTx(genesisTX))
+  inputBoxList.append(genesisInput: _*)
 
   private val ErgoNamesOutBox = new ErgoNamesOutBox(this.ctx)
 
   private val singletonTokenID = inputBoxList.head.getId.toString
 
+  private val subnamesContract = compiler.compileSubnameContract(
+    ErgoNamesContracts.SubnameContract.contractScript
+  )
+
   private val mintContract = compiler.compileMintContract(
     ErgoNamesContracts.MintContract.contractScript,
     new ErgoToken(singletonTokenID, 1),
-    null
+    subnamesContract
   )
   private val proxyContract = compiler.compileProxyContract(
     ErgoNamesContracts.ProxyContract.contractScript,
@@ -89,10 +84,15 @@ object init extends App {
   )
 
   private val tokenOutBox =
-    ErgoNamesOutBox.ergoNamesInitOutBox(mintContract, token, tokenMap)
+    ErgoNamesOutBox.ergoNamesInitOutBox(
+      mintContract,
+      token,
+      tokenMap,
+      Parameters.OneErg
+    )
 
   private val initTX = txHelper.signTransaction(
-    txHelper.buildUnsignedTransaction(inputBoxList, List(tokenOutBox))
+    txHelper.buildUnsignedTransaction(inputBoxList, Array(tokenOutBox))
   )
 
   private val initTx = txHelper.sendTx(initTX)
@@ -104,36 +104,11 @@ object init extends App {
     proxyContract.toAddress.toString
   )).write(contractConfFilePath)
 
+  println(s"proxy contract: ${proxyContract.getErgoTree.bytesHex}")
+  println(s"commitment contract: ${commitmentContract.getErgoTree.bytesHex}")
+
   println("init tx: " + initTx)
 
-}
-
-object getContracts extends App {
-
-  private val client: Client = new Client()
-  client.setClient
-  private val ctx = client.getContext
-  private val compiler = new ContractCompile(ctx)
-
-  private val singletonTokenID =
-    "85f9d234f320194b7ada4d150d7369f16b0057c7811d9f8c1218c9ce991849e8"
-
-  private val mintContract = compiler.compileMintContract(
-    ErgoNamesContracts.MintContract.contractScript,
-    new ErgoToken(singletonTokenID, 1),
-    null
-  )
-
-  private val proxyContract = compiler.compileProxyContract(
-    ErgoNamesContracts.ProxyContract.contractScript,
-    new ErgoToken(singletonTokenID, 1),
-    1000000
-  )
-
-  println("Mint Contract: " + mintContract.toAddress.toString)
-  println("Mint Contract ErgoTree: " + mintContract.getErgoTree.bytesHex)
-  println("Proxy Contract: " + proxyContract.toAddress.toString)
-  println("Proxy Contract ErgoTree: " + proxyContract.getErgoTree.bytesHex)
 }
 
 object apiTest extends App {

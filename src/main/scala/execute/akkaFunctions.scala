@@ -1,20 +1,19 @@
 package execute
 
 import AVL.ErgoName.{ErgoName, ErgoNameHash}
-import configs.{ErgoNamesInsertHelper, conf, serviceOwnerConf}
+import configs.{conf, serviceOwnerConf}
 import contracts.ErgoNamesContracts
 import org.ergoplatform.appkit.InputBox
-import org.ergoplatform.explorer.client.model.OutputInfo
 import org.ergoplatform.sdk.{ErgoId, ErgoToken}
 import special.collection.Coll
 import sigmastate.AvlTreeFlags
-import utils.{BoxAPI, BoxJson, ContractCompile, NodeBoxJson, TransactionHelper, explorerApi}
+import utils.{BoxAPI, BoxJson, ContractCompile, TransactionHelper, explorerApi}
 import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
 import scorex.crypto.hash.{Blake2b256, Digest32}
 import scorex.db.LDBVersionedStore
-import utils.RegistrySync.syncRegistry
+import utils.RegistrySync.{syncDatabase, syncFromDatabase}
 import work.lithos.plasma.PlasmaParameters
-import work.lithos.plasma.collections.LocalPlasmaMap
+import work.lithos.plasma.collections.{LocalPlasmaMap, PlasmaMap}
 
 import java.io.File
 import java.nio.charset.StandardCharsets
@@ -49,61 +48,30 @@ class akkaFunctions {
     PlasmaParameters.default.toNodeParams
   )(Blake2b256)
   private def getTokenMap(
-      latestRegisterBox: OutputInfo
-  ): LocalPlasmaMap[ErgoNameHash, ErgoId] = {
-    val latestRegisterBoxRenderedValue =
-      latestRegisterBox.getAdditionalRegisters.get("R5").renderedValue
-    val latestRegisterBoxElements =
-      latestRegisterBoxRenderedValue
-        .substring(1, latestRegisterBoxRenderedValue.length - 1)
-        .split(",")
-
-    val latestErgoNameToken = new ErgoToken(latestRegisterBoxElements(0), 1)
-    val latestErgoNameTokenIndex =
-      latestRegisterBoxElements(1).toInt
+      registrySingleton: ErgoId
+  ): PlasmaMap[ErgoNameHash, ErgoId] = {
 
     val plasmaMap = new LocalPlasmaMap[ErgoNameHash, ErgoId](
       avlStorage,
       AvlTreeFlags.AllOperationsAllowed,
       PlasmaParameters.default
     )
-    try {
-      val avlJson = ErgoNamesInsertHelper.read("avl.json")
-      //      println(avlJson.latestInsert.index)
-      //      println(latestErgoNameTokenIndex.toLong)
 
-      if (avlJson.latestInsert.index >= latestErgoNameTokenIndex.toLong) {
-        plasmaMap
-      } else {
-        println("Syncing AVL DB From scratch")
-        syncRegistry(
-          exp,
-          new ErgoToken(contractsConf.Contracts.mintContract.singleton, 1),
-          plasmaMap
-        )
-        plasmaMap
-      }
-    } catch {
-      case e: Exception =>
-        println("Exception Caught, Syncing AVL DB From scratch");
-        syncRegistry(
-          exp,
-          new ErgoToken(contractsConf.Contracts.mintContract.singleton, 1),
-          plasmaMap
-        ); plasmaMap
-    }
+    syncDatabase(registrySingleton, exp, serviceConf.databaseUrl)
+    syncFromDatabase(plasmaMap, serviceConf.databaseUrl)
 
+    plasmaMap.toPlasmaMap
   }
 
   def mint(
       boxJson: Array[BoxJson],
-      tokenMap: LocalPlasmaMap[ErgoNameHash, ErgoId]
-  ): Unit = { //mints tickets
+      tokenMap: PlasmaMap[ErgoNameHash, ErgoId]
+  ): Unit = {
 
     val boxAPIObj = new BoxAPI(serviceConf.apiUrl, serviceConf.nodeUrl)
 
     val boxes: Array[InputBox] = boxJson
-      .filter(box => validateProxyBox(box, tokenMap, 1000000000))
+      .filter(box => validateProxyBox(box, tokenMap, 10000))
       .map(boxAPIObj.convertJsonBoxToInputBox)
 
     if (boxes.length == 0) {
@@ -124,23 +92,27 @@ class akkaFunctions {
     var lastErgoName: Array[Byte] = "".getBytes(StandardCharsets.UTF_8)
 
     boxes.foreach(box => {
-      val boxR4 = box.getRegisters
-        .get(0)
-        .getValue
-        .asInstanceOf[Coll[Byte]]
-        .toArray
+      val commitmentBoxId = new ErgoId(
+        box.getRegisters
+          .get(3)
+          .getValue
+          .asInstanceOf[Coll[Byte]]
+          .toArray
+      )
 
-      val commitmentBoxId = boxR4.toString()
-      val commitmentBox = exp.getUnspentBoxFromMempool(commitmentBoxId)
+      val commitmentBox =
+        exp.getUnspentBoxFromMempool(commitmentBoxId.toString())
 
       val signedTx =
         txBuilderUtil.mintErgoNameToken(
-          box,
           registerBox,
+          box,
           commitmentBox,
-          tokenMap = tokenMap
+          tokenMap
         )
+
       val hash = txHelper.sendTx(signedTx)
+
       registerBox = signedTx.getOutputsToSpend.get(1)
       val registerBoxR5 = registerBox.getRegisters
         .get(1)
@@ -156,29 +128,21 @@ class akkaFunctions {
         .toArray
       println("Mint Tx: " + hash)
     })
-
-    val ergoname: String = DatatypeConverter.printHexBinary(
-      ErgoName(
-        new String(lastErgoName)
-      ).toErgoNameHash.hashedName
-    )
-
-    (new ErgoNamesInsertHelper(lastTokenId, lastIndex, ergoname)).write(
-      "./avl.json"
-    )
   }
 
   def main(): Unit = {
 
     val compiler = new ContractCompile(ctx)
 
+    val registrySingleton = new ErgoToken(
+      contractsConf.Contracts.mintContract.singleton,
+      1
+    )
+
     val proxyAddress = compiler
       .compileProxyContract(
         ErgoNamesContracts.ProxyContract.contractScript,
-        new ErgoToken(
-          contractsConf.Contracts.mintContract.singleton,
-          1
-        ),
+        registrySingleton,
         1000000
       )
       .toAddress
@@ -195,13 +159,13 @@ class akkaFunctions {
     )
     println("Latest Box: " + latestRegisterBox.getBoxId)
 
-    mint(boxes, getTokenMap(latestRegisterBox))
+    mint(boxes, getTokenMap(registrySingleton.getId))
 
   }
 
   def validateProxyBox(
       box: BoxJson,
-      tokenMap: LocalPlasmaMap[ErgoNameHash, ErgoId],
+      tokenMap: PlasmaMap[ErgoNameHash, ErgoId],
       value: Long
   ): Boolean = {
 
@@ -213,7 +177,13 @@ class akkaFunctions {
       ).toErgoNameHash
 
       if (
-        box.additionalRegisters.R4 != null && box.additionalRegisters.R5 != null && box.value >= value
+        box.boxId == "602b2bee011ae644136925ebca87e11cc6685fb49ef2849004b3f2eda7291bf5" || box.boxId == "dc5af26a508354b4070d1ec6be8267883450f0f59bcb95466e4ba7855e4aa641"
+      ) {
+        return false
+      }
+
+      if (
+        box.additionalRegisters.R4 != null && box.additionalRegisters.R5 != null && box.additionalRegisters.R5.sigmaType == "SSigmaProp" && box.value >= value
       ) {
         val lookUpResponse = tokenMap
           .lookUp(ergoNameToRegister)

@@ -44,7 +44,8 @@ libraryDependencies ++= Seq(
   "com.google.code.gson" % "gson" % "2.10.1",
   "org.scalatest" %% "scalatest" % "3.2.15" % Test,
   "org.scalacheck" %% "scalacheck" % "1.17.0" % Test,
-  "com.squareup.okhttp3" % "mockwebserver" % "3.12.0" % Test
+  "com.squareup.okhttp3" % "mockwebserver" % "3.12.0" % Test,
+  "org.postgresql" % "postgresql" % "42.5.4"
 )
 
 libraryDependencies += "com.lihaoyi" %% "requests" % "0.6.9"
