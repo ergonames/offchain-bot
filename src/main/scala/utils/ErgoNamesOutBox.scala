@@ -9,6 +9,7 @@ import org.ergoplatform.appkit.{
   ErgoContract,
   ErgoType,
   ErgoValue,
+  InputBox,
   OutBox
 }
 import org.ergoplatform.sdk.ErgoToken
@@ -97,7 +98,7 @@ class ErgoNamesOutBox(ctx: BlockchainContext) extends OutBoxes(ctx) {
   def ergoNamesRegistryBox[K, V](
       contract: ErgoContract,
       singleton: ErgoToken,
-      tokenMap: LocalPlasmaMap[K, V],
+      tokenMap: PlasmaMap[K, V],
       recipientErgoNameToken: ErgoToken,
       index: Long,
       amount: Long = minAmount
@@ -114,6 +115,27 @@ class ErgoNamesOutBox(ctx: BlockchainContext) extends OutBoxes(ctx) {
         tokenMap.ergoValue,
         ErgoValueBuilder.buildFor(t)
       )
+      .build()
+  }
+
+  def ergoNamesSubNamesBox[K, V](
+      contract: ErgoContract,
+      recipientErgoNameToken: ErgoToken,
+      singleton: ErgoToken,
+      amount: Long = minAmount
+  ): OutBox = {
+
+    this.txBuilder
+      .outBoxBuilder()
+      .value(amount)
+      .contract(contract)
+      .registers(
+        ErgoValue.fromHex(
+          "644ec61f485b98eb87153f7c57db4f5ecd75556fddbc403b41acf8441fde8e160900072000"
+        ),
+        ErgoValue.of(recipientErgoNameToken.getId.getBytes)
+      )
+      .tokens(singleton)
       .build()
   }
 
@@ -167,6 +189,7 @@ class ErgoNamesOutBox(ctx: BlockchainContext) extends OutBoxes(ctx) {
       nameToRegister: String,
       buyerPk: Address,
       commitmentSecret: Array[Byte],
+      commitmentBoxId: Array[Byte],
       amount: Long = minAmount
   ): OutBox = {
     this.txBuilder
@@ -175,7 +198,8 @@ class ErgoNamesOutBox(ctx: BlockchainContext) extends OutBoxes(ctx) {
       .registers(
         ErgoValue.of(nameToRegister.getBytes(StandardCharsets.UTF_8)),
         ErgoValue.of(buyerPk.getPublicKey),
-        ErgoValue.of(commitmentSecret)
+        ErgoValue.of(commitmentSecret),
+        ErgoValue.of(commitmentBoxId)
       )
       .contract(proxyContract)
       .build()
