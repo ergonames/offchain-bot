@@ -45,7 +45,7 @@
     val newErgoNameTokenInRegistry = updatedRegistryBox.R5[(Coll[Byte], Long)].get._1
 
     val minCommitmentBoxAge = 3
-    val maxCommitmentBoxAge = 30
+    val maxCommitmentBoxAge = 300
 
     val mintNewErgoName = {
         val validToken = newErgoNameToken == (tokenIdToRegister, 1L)
