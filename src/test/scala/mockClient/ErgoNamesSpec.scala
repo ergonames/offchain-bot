@@ -1,6 +1,7 @@
 package mockClient
 
 import AVL.ErgoName.{ErgoName, ErgoNameHash}
+import configs.conf
 import org.bouncycastle.util.encoders.Hex
 import org.ergoplatform.appkit.{
   Address,
@@ -13,17 +14,27 @@ import org.ergoplatform.appkit.{
 import org.ergoplatform.sdk.{ErgoId, ErgoToken}
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers
+import scorex.crypto.authds.avltree.batch.VersionedLDBAVLStorage
 import scorex.crypto.hash
+import scorex.crypto.hash.{Blake2b256, Digest32}
+import scorex.db.LDBVersionedStore
 import sigmastate.AvlTreeFlags
 import special.collection.Coll
 import special.sigma.AvlTree
-import utils.{TransactionHelper, explorerApi}
+import utils.{Database, RegistrySync, TransactionHelper, explorerApi}
 import work.lithos.plasma.PlasmaParameters
-import work.lithos.plasma.collections.{PlasmaMap, Proof, ProvenResult}
+import work.lithos.plasma.collections.{
+  LocalPlasmaMap,
+  PlasmaMap,
+  Proof,
+  ProvenResult
+}
 
+import java.io.File
 import java.nio.charset.StandardCharsets
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
+import scala.util.Random
 
 class ErgoNamesSpec extends AnyFlatSpec with Matchers with Common {
 
@@ -53,10 +64,145 @@ class ErgoNamesSpec extends AnyFlatSpec with Matchers with Common {
   )
 
   "contractAddresses" should "print" in {
-    println("Mint Contract: " + mintContract.toAddress)
-    println("Proxy Contract: " + proxyContract.toAddress)
+    println("Mint Contract: " + mintContract.getErgoTree.bytesHex)
+    println("Proxy Contract: " + proxyContract.getErgoTree.bytesHex)
     println("Commitment Contract: " + commitmentContract.toAddress)
     println("Subnames Contract: " + subnameContract.toAddress)
+  }
+
+  "test writing to db" should "work" in {
+    val contractConfFilePath = "contracts.json"
+    val contractsConf = conf.read(contractConfFilePath)
+    val singletonId =
+      new ErgoToken(contractsConf.Contracts.mintContract.singleton, 1).getId
+    val exp = new explorerApi()
+
+    val ldbFile = new File("./test")
+
+    val ldbStore = new LDBVersionedStore(ldbFile, 10)
+    val avlStorage = new VersionedLDBAVLStorage[Digest32](
+      ldbStore,
+      PlasmaParameters.default.toNodeParams
+    )(Blake2b256)
+
+    val localPlasmaMap = new LocalPlasmaMap[ErgoNameHash, ErgoId](
+      avlStorage,
+      AvlTreeFlags.AllOperationsAllowed,
+      PlasmaParameters.default
+    )
+
+//    RegistrySync.syncDatabase(
+//      singletonId,
+//      exp
+//    )
+//
+//    RegistrySync.syncFromDatabase(localPlasmaMap)
+
+//    def generateTestData(n: Int): List[(Long, (String, String))] = {
+//      (1 to n).map { i =>
+//        (
+//          i.toLong,
+//          (
+//            Hex.toHexString(Blake2b256.hash(s"name_$i".getBytes("UTF-8"))),
+//            s"name_$i"
+//          )
+//        )
+//      }.toList
+//    }
+//
+//    val dbPassword =
+//      "ofng4xZc65OMeNmQ"
+//    val connection =
+//      s"jdbc:postgresql://db.khmjuedtqefmthlhceot.supabase.co:5432/postgres?user=postgres&password=$dbPassword"
+//
+//    val db = new Database(connection)
+//    db.clearTable()
+//    val sortedTokenList = generateTestData(1000000)
+//
+//    println(sortedTokenList.size)
+//
+//    val res = db.writeRowsBatch(sortedTokenList)
+//
+//    println(res)
+
+  }
+
+  "plasma test" should "work" in {
+
+    val ldbFile = new File("./test")
+
+    val ldbStore = new LDBVersionedStore(ldbFile, 10)
+    val avlStorage = new VersionedLDBAVLStorage[Digest32](
+      ldbStore,
+      PlasmaParameters.default.toNodeParams
+    )(Blake2b256)
+
+    val localPlasmaMap = new LocalPlasmaMap[ErgoNameHash, ErgoId](
+      avlStorage,
+      AvlTreeFlags.AllOperationsAllowed,
+      PlasmaParameters.default
+    )
+
+    println(s"Local Plasma Map: ${Hex.toHexString(localPlasmaMap.digest)}")
+
+    val nameToRegisterHash: ErgoNameHash = ErgoName(
+      "vivek"
+    ).toErgoNameHash
+
+    val tokenId = new ErgoId(
+      Hex.decode(
+        "ca47874b9d946771597718585c79b16702311176d232e1d25279460a8983d0ad"
+      )
+    )
+
+    val plasmaMap = localPlasmaMap.toPlasmaMap
+
+    plasmaMap.insert((nameToRegisterHash, tokenId))
+
+    println(s"Plasma Map After insertion: ${Hex.toHexString(plasmaMap.digest)}")
+    println(
+      s"Local Plasma Map After insertion: ${Hex.toHexString(localPlasmaMap.digest)}"
+    )
+  }
+
+  "commitmentBox" should "work" in {
+
+    val recipientAddress =
+      Address.create("3Wvs1AUptzAumMPmKg1tGbeQLwtZgiyK7dmZcfLGW6uNxhpX7a1f")
+
+    val recipientAddressPropBytes = recipientAddress.asP2PK().script.bytes
+
+    println(Hex.toHexString(recipientAddressPropBytes))
+
+    val secretString = "secret"
+    val secretStringHash: Array[Byte] =
+      hash.Blake2b256(secretString.getBytes(StandardCharsets.UTF_8))
+
+    val nameToRegister = "John"
+    val nameToRegisterBytes: Array[Byte] =
+      nameToRegister.getBytes(StandardCharsets.UTF_8)
+
+    val commitmentSecretHash =
+      hash.Blake2b256(
+        secretStringHash ++ recipientAddressPropBytes ++ nameToRegisterBytes
+      )
+
+    println(Hex.toHexString(commitmentSecretHash))
+
+    val e = ErgoValue.of(nameToRegister.getBytes(StandardCharsets.UTF_8))
+
+    println(e.toHex)
+    println(Hex.toHexString(nameToRegister.getBytes(StandardCharsets.UTF_8)))
+
+    val commitmentBox = outBoxObj
+      .commitmentBox(
+        commitmentContract,
+        commitmentSecretHash,
+        recipientAddress,
+        mockchainCtx.getHeight - 3,
+        subnameSingletonToken,
+        minerFee + minerFee
+      )
   }
 
   "endToEndTest" should "work" in {
@@ -101,7 +247,8 @@ class ErgoNamesSpec extends AnyFlatSpec with Matchers with Common {
         proxyContract,
         nameToRegister,
         recipientAddress,
-        secretStringHash
+        secretStringHash,
+        commitmentBox.getId.getBytes
       )
       .convertToInputWith(fakeTxId2, fakeIndex)
 
@@ -151,7 +298,7 @@ class ErgoNamesSpec extends AnyFlatSpec with Matchers with Common {
 
     val subnamesOutBox = outBoxObj.ergoNamesSubNamesBoxForTesting(
       subnameContract,
-      emptyMap,
+      subnameEmptyMap,
       ergoNameRecipientToken,
       subnameSingletonToken
     )
@@ -294,6 +441,9 @@ class ErgoNamesSpec extends AnyFlatSpec with Matchers with Common {
       AvlTreeFlags.AllOperationsAllowed,
       PlasmaParameters.default
     )
+
+    println(s"AVL Map Digest: ${Hex
+      .toHexString(rootMap.ergoAVLTree.digest.toArray)}")
 
     val recipientAddress =
       Address.create("9hU5VUSUAmhEsTehBKDGFaFQSJx574UPoCquKBq59Ushv5XYgAu")
@@ -543,6 +693,25 @@ class ErgoNamesSpec extends AnyFlatSpec with Matchers with Common {
           rootErgonames(index)
         )
     }
+
+  }
+
+  "avl test" should "work" in {
+    val ldbFile = new File("./empty")
+
+    val ldbStore = new LDBVersionedStore(ldbFile, 10)
+    val avlStorage = new VersionedLDBAVLStorage[Digest32](
+      ldbStore,
+      PlasmaParameters.default.toNodeParams
+    )(Blake2b256)
+
+    val emptyMap = new LocalPlasmaMap[ErgoNameHash, ErgoId](
+      avlStorage,
+      AvlTreeFlags.AllOperationsAllowed,
+      PlasmaParameters.default
+    )
+
+    println(Hex.toHexString(emptyMap.ergoAVLTree.digest.toArray))
 
   }
 
