@@ -99,13 +99,13 @@ trait Common extends HttpClientTesting {
 
   val mintContract: ErgoContract = compiler.compileMintContract(
     ErgoNamesContracts.MintContract.contractScript,
-    singletonToken,
+    new ErgoToken("ca47874b9d946771597718585c79b16702311176d232e1d25279460a8983d0ad", 1),
     subnameContract
   )
 
   val proxyContract: ErgoContract = compiler.compileProxyContract(
     ErgoNamesContracts.ProxyContract.contractScript,
-    singletonToken,
+    new ErgoToken("ca47874b9d946771597718585c79b16702311176d232e1d25279460a8983d0ad", 1),
     minerFee
   )
 
@@ -164,7 +164,8 @@ trait Common extends HttpClientTesting {
         proxyContract,
         nameToRegister,
         recipientAddress,
-        secretStringHash
+        secretStringHash,
+        commitmentBox.getId.getBytes
       )
       .convertToInputWith(fakeTxId2, fakeIndex)
 
@@ -278,7 +279,8 @@ trait Common extends HttpClientTesting {
         proxyContract,
         nameToRegister,
         recipientAddress,
-        secretStringHash
+        secretStringHash,
+        commitmentBox.getId.getBytes
       )
       .convertToInputWith(fakeTxId2, fakeIndex)
 
