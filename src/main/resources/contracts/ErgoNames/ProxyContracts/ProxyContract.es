@@ -10,6 +10,7 @@
     // R4: Coll[Byte] => name to register
     // R5: SigmaProp => receiver sigmaProp
     // R6: Coll[Byte] => commitment secret
+    // R7: Coll[Byte] => commitment box id
 
     // ===== Compile Time Constants ===== //
     // _singletonToken: Coll[Byte]
@@ -33,23 +34,29 @@
             // outputs
             val tokenReceiverBox = OUTPUTS(0)
 
+            val commitmentBoxId: Coll[Byte] = SELF.R7[Coll[Byte]].get
+
 
             val validRecipient: Boolean = {
                 tokenReceiverBox.propositionBytes == buyerPK.propBytes
             }
 
-            val validAmount: Boolean = {
-                tokenReceiverBox.value == INPUTS(0).value
-            }
+//            val validAmount: Boolean = {
+//                tokenReceiverBox.value == INPUTS(0).value
+//            }
 
             val validRegistryBox: Boolean = {
                 (registryInputBox.tokens(0)._1 == _singletonToken)
             }
 
+            val validCommitmentBox: Boolean = {
+                (INPUTS(2).id == commitmentBoxId)
+            }
+
             allOf(Coll(
-                validAmount,
                 validRecipient,
-                validRegistryBox
+                validRegistryBox,
+                validCommitmentBox
             ))
 
         }
