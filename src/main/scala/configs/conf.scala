@@ -74,7 +74,8 @@ case class ServiceOwnerConfig(
     txOperatorMnemonic: String,
     txOperatorMnemonicPw: String,
     nodeUrl: String,
-    apiUrl: String
+    apiUrl: String,
+    databaseUrl: String
 )
 
 object serviceOwnerConf {
